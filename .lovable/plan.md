@@ -1,85 +1,59 @@
-# Sistema de Gestão de Biblioteca
+# Plano de melhorias
 
-Aplicação web completa para administração de bibliotecas domésticas/pequenas organizações, inspirada no Libib, com catálogo, empréstimos, usuários e impressão de etiquetas com código de barras. UI em português do Brasil.
+## 1. Banco de dados (migração única)
+- `settings`: inserir chave `library_name` (default "Minha Biblioteca").
+- `shelves` (nova tabela): `id`, `nome` (unique), `descricao`, timestamps. RLS: leitura authenticated, escrita admin/bibliotecário. GRANTs completos.
+- `profiles`: nova coluna `numero` text único (5 dígitos). Função `generate_profile_number()` gera valor aleatório não colidente. Trigger `handle_new_user` passa a inserir o número. Backfill para perfis existentes.
+- `categories`: seed com lista ampla brasileira (Literatura Brasileira, Literatura Estrangeira, Romance, Conto, Poesia, Crônica, Infantil, Juvenil, HQ/Mangá, Biografia, História, Filosofia, Sociologia, Psicologia, Religião/Espiritualidade, Autoajuda, Educação, Direito, Administração, Economia, Negócios, Marketing, Tecnologia/Informática, Engenharia, Ciências Exatas, Ciências Biológicas, Saúde/Medicina, Artes, Música, Arquitetura, Gastronomia, Esportes, Viagem, Política, Atualidades, Dicionários/Referência, Didáticos, Concursos, ENEM/Vestibular, Ficção Científica, Fantasia, Suspense/Mistério, Terror).
+- `books`: opcional adicionar `codigo_barras` text (independente do ISBN) — busca aceita ambos.
 
-## Stack
-- React + TypeScript + TanStack Start (já configurado)
-- Tailwind v4 + shadcn/ui (Sidebar, DataTable via TanStack Table, Dialog, Form, Card, Chart)
-- **Lovable Cloud** (Supabase) — banco, auth, RLS
-- `jsbarcode` (Code 128) + `jspdf` (PDF A4 de etiquetas)
-- `recharts` para gráficos do dashboard
-- Open Library API para autopreencher por ISBN
+## 2. Frontend — mudanças por funcionalidade
 
-## Modelo de Dados
+### (1) Nome da biblioteca
+- `settings.tsx`: campo "Nome da biblioteca" (lê/grava `library_name` em `settings`).
+- `AppSidebar.tsx` e `dashboard.tsx`: lê `library_name` via React Query e exibe no topo/título.
 
-Migration única com tabelas em `public`, RLS habilitada e GRANTs explícitos.
+### (2) Etiquetas em lote multi-livro
+- `labels.tsx` reformulado: lista de itens `{book_id, quantidade}` com botão "Adicionar livro". Cada linha tem select de livro + input quantidade. Botão "Gerar" produz preview grid 3×8 + PDF concatenado, otimizando aproveitamento da folha A4 (preenche célula a célula sem espaços em branco entre livros diferentes).
 
-- `app_role` enum (`admin`, `bibliotecario`, `membro`)
-- `user_roles` (id, user_id FK→auth.users, role) + função `has_role()` SECURITY DEFINER
-- `profiles` (id FK→auth.users, nome, telefone, endereco, data_cadastro)
-- `categories` (id, nome, descricao)
-- `books` (id, titulo, autor, isbn, editora, ano, numero_paginas, idioma, sinopse, capa_url, quantidade_total, quantidade_disponivel, localizacao_prateleira, categoria_id, timestamps)
-- `loans` (id, book_id, user_id, data_emprestimo, data_devolucao_prevista, data_devolucao_real, status)
-- `reservations` (id, book_id, user_id, data_reserva, status) — **somente schema, sem UI nesta entrega**
-- `labels` (id, book_id, codigo_barras unique, data_geracao)
-- `settings` (key, value jsonb) — guarda configurações globais (ex: `multa_por_dia`)
+### (3) Gestão de estantes em Configurações
+- `settings.tsx` ganha seção "Estantes" com tabela CRUD (criar, renomear, excluir). 
+- `books.tsx`: o campo "Prateleira" vira `Select` populado a partir de `shelves` (com opção "— Nenhuma —").
 
-**Trigger** `handle_new_user`: cria `profiles` e atribui role `membro` no signup.
+### (4) Categorias amplas BR
+- Seed na migração. Sem mudança extra na UI.
 
-**Primeiro admin (bootstrap):** tela "Tornar-me administrador" visível apenas enquanto não existir nenhum registro com role `admin` na tabela `user_roles`. Botão chama server function que verifica a ausência de admin e promove o usuário autenticado atual. Após existir um admin, a tela some.
+### (5) Busca por código de barras na Open Library
+- `openlibrary.functions.ts`: aceita string genérica. Se 13 dígitos começa com 978/979 → ISBN direto. Caso contrário tenta como ISBN mesmo (códigos EAN de livros normalmente são o próprio ISBN-13). Adiciona fallback `?bibkeys=ISBN:` removendo zeros à esquerda.
+- `books.tsx`: rótulo do botão muda para "Buscar por ISBN/Cód. barras".
 
-**RLS resumida:**
-- `books`, `categories`: SELECT público; INSERT/UPDATE/DELETE só admin/bibliotecario.
-- `loans`: membro vê os próprios; admin/bibliotecario veem e gerenciam todos.
-- `profiles`: usuário edita o próprio; admin/bibliotecario veem todos.
-- `user_roles`: só admin gerencia.
-- `settings`: leitura autenticada; escrita só admin.
+### (6) Capa no acervo (tabela)
+- `books.tsx`: nova coluna "Capa" mostrando `<img>` 40×56 com fallback ícone.
 
-## Telas / Rotas
+### (7) Histórico global + comprovante A6
+- `dashboard.tsx` (apenas staff): nova seção "Histórico de empréstimos" — tabela paginada com livro, usuário, datas, status, multa.
+- `loans.tsx`: ao registrar novo empréstimo, abre modal com "Imprimir comprovante" — gera PDF A6 via `jsPDF` (`format: 'a6'`) com nome da biblioteca, código do empréstimo, livro, autor, ISBN, mutuário (nome + número), data empréstimo, data devolução prevista, multa/dia vigente.
 
-Públicas:
-- `/auth` — login + cadastro (novos usuários viram `membro`)
-- `/catalog` — grid com busca por texto, filtros (categoria, disponibilidade), página de detalhe do livro
+### (8) Número de 5 dígitos por perfil
+- Gerado pelo trigger e visível em `profile.tsx`, `users.tsx` (coluna), e no comprovante de empréstimo.
+- Bootstrap: backfill atribui número aos perfis existentes.
 
-Autenticadas (`src/routes/_authenticated/`):
-- `/dashboard` — cards (total livros, emprestados, membros, atrasados) + gráfico — admin/bibliotecario
-- `/books` — DataTable CRUD acervo + **Importar por ISBN**
-- `/users` — DataTable usuários + alteração de role — admin/bibliotecario
-- `/loans` — empréstimos ativos, registrar devolução (calcula multa), novo empréstimo (autocomplete usuário + livro)
-- `/labels` — selecionar livro + faixa numérica → preview 3×8 A4 + exportar PDF
-- `/settings` — configurar **valor da multa por dia (R$)** e outros parâmetros globais — admin
-- `/profile` — dados pessoais + histórico próprio — todos os papéis
+### (9) Leitor de QR/código de barras
+- Adicionar dep `html5-qrcode`.
+- `books.tsx`: botão "Escanear" abre `Dialog` com câmera; ao detectar código preenche o campo ISBN e dispara busca automática.
 
-Layout com Sidebar shadcn colapsável; itens filtrados por role.
+### (10) Estatísticas no acervo (catálogo)
+- `catalog.tsx`: faixa superior com cards numéricos (Total de livros, Exemplares disponíveis, Categorias, Autores únicos) + mini gráfico de barras (recharts) "Livros por categoria" (top 8).
 
-## Regras de Negócio
+## 3. Dependências novas
+- `html5-qrcode` para leitor.
+- Já temos `jspdf`, `jsbarcode`, `recharts`.
 
-- **Empréstimo**: requer `quantidade_disponivel > 0`; RPC atômica decrementa estoque, cria `loans` com `data_devolucao_prevista = hoje + 14 dias`, status `ativo`.
-- **Devolução**: RPC atômica incrementa estoque, seta `data_devolucao_real`, status `concluido`. Multa = `dias_de_atraso × settings.multa_por_dia` (configurável; padrão R$ 1,00).
-- **Atrasado**: derivado em leitura quando `status='ativo'` e `data_devolucao_prevista < hoje`.
-- **ISBN**: server function consulta Open Library e devolve campos para o formulário.
-- **Etiquetas**: cada etiqueta tem Título, Autor, código de barras (`{ISBN}-{seq zero-padded}`) e prateleira; registros persistidos em `labels`.
+## 4. Itens explicitamente fora do escopo
+- Não mexer em RLS já existente além do necessário para `shelves`.
+- Reservas continuam sem UI.
 
-## Server Functions (`requireSupabaseAuth` quando aplicável)
-- `bootstrapFirstAdmin` — promove o primeiro admin se não houver nenhum
-- `createLoan`, `returnLoan` — via RPCs atômicas
-- `importBookByIsbn` — proxy Open Library
-- `dashboardStats`
-- `generateLabels` — cria registros e devolve dados para o PDF
-- `getSettings` / `updateSettings`
-
-## Design
-
-- Paleta confiável: azul marinho `primary`, cinza neutro, branco — tokens `oklch` em `src/styles.css`
-- Cantos arredondados (`--radius: 0.75rem`), sombras suaves
-- Fonte: Inter (corpo) + display sutil para títulos
-- Tabelas com ordenação, filtro e paginação (TanStack Table)
-- Toasts via `sonner`; mensagens em pt-BR
-- 100% responsivo (mobile, tablet, desktop)
-
-## Entregáveis nesta geração
-1. Habilitar Lovable Cloud
-2. Migration única (enum, tabelas, RLS, GRANTs, trigger, RPCs, settings com seed `multa_por_dia=1.00`, categorias padrão)
-3. Sidebar + roteamento por role + bootstrap de primeiro admin
-4. Todas as telas listadas, funcionais
-5. Importação ISBN + geração e exportação de etiquetas PDF
+## Resumo técnico
+- 1 migração SQL (settings seed, shelves, profiles.numero + trigger, seed categorias).
+- Edições: `settings.tsx`, `dashboard.tsx`, `AppSidebar.tsx`, `labels.tsx`, `books.tsx`, `loans.tsx`, `catalog.tsx`, `profile.tsx`, `users.tsx`, `openlibrary.functions.ts`.
+- Novos componentes: `BarcodeScanner.tsx`, `LoanReceipt.ts` (helper jsPDF).

@@ -181,6 +181,7 @@ export type Database = {
           endereco: string | null
           id: string
           nome: string
+          numero: string | null
           telefone: string | null
           updated_at: string
         }
@@ -191,6 +192,7 @@ export type Database = {
           endereco?: string | null
           id: string
           nome?: string
+          numero?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -201,6 +203,7 @@ export type Database = {
           endereco?: string | null
           id?: string
           nome?: string
+          numero?: string | null
           telefone?: string | null
           updated_at?: string
         }
@@ -256,6 +259,30 @@ export type Database = {
         }
         Relationships: []
       }
+      shelves: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -287,6 +314,7 @@ export type Database = {
         Args: { _book_id: string; _dias?: number; _user_id: string }
         Returns: string
       }
+      generate_profile_number: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
