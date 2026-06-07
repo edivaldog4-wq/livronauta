@@ -8,12 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
+import { Plus, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { createLoan, returnLoan } from "@/lib/loans.functions";
+import { useLibraryName } from "@/lib/library";
+import { generateReceiptPdf } from "@/lib/receipt";
 
 export const Route = createFileRoute("/_authenticated/loans")({
   head: () => ({ meta: [{ title: "Empréstimos — Biblioteca" }] }),
@@ -23,9 +25,11 @@ export const Route = createFileRoute("/_authenticated/loans")({
 function LoansPage() {
   const { isStaff } = useAuth();
   const qc = useQueryClient();
+  const libraryName = useLibraryName();
   const [open, setOpen] = useState(false);
   const [bookId, setBookId] = useState("");
   const [userId, setUserId] = useState("");
+  const [receipt, setReceipt] = useState<any | null>(null);
   const create = useServerFn(createLoan);
   const ret = useServerFn(returnLoan);
 
@@ -33,7 +37,7 @@ function LoansPage() {
     queryKey: ["loans"],
     queryFn: async () => {
       const { data } = await supabase.from("loans")
-        .select("*, books(titulo, autor), profiles(nome, email)")
+        .select("*, books(titulo, autor, isbn), profiles(nome, email, numero)")
         .order("data_emprestimo", { ascending: false });
       return data ?? [];
     },
@@ -41,21 +45,46 @@ function LoansPage() {
 
   const { data: books = [] } = useQuery({
     queryKey: ["available-books"],
-    queryFn: async () => (await supabase.from("books").select("id, titulo, autor, quantidade_disponivel").gt("quantidade_disponivel", 0).order("titulo")).data ?? [],
+    queryFn: async () => (await supabase.from("books").select("id, titulo, autor, isbn, quantidade_disponivel").gt("quantidade_disponivel", 0).order("titulo")).data ?? [],
   });
 
   const { data: profiles = [] } = useQuery({
     queryKey: ["all-profiles"],
-    queryFn: async () => (await supabase.from("profiles").select("id, nome, email").order("nome")).data ?? [],
+    queryFn: async () => (await supabase.from("profiles").select("id, nome, email, numero").order("nome")).data ?? [],
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => (await supabase.from("settings").select("*")).data ?? [],
+  });
+
+  const finePerDay = (() => {
+    const m = settings?.find((s: any) => s.key === "multa_por_dia");
+    return m ? Number(m.value) || 0 : 0;
+  })();
 
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
   const handleCreate = async () => {
     if (!bookId || !userId) return toast.error("Selecione livro e usuário");
     try {
-      await create({ data: { book_id: bookId, user_id: userId, dias: 14 } });
+      const r = await create({ data: { book_id: bookId, user_id: userId, dias: 14 } });
       toast.success("Empréstimo registrado");
+      const book = books.find((b: any) => b.id === bookId);
+      const profile = profiles.find((p: any) => p.id === userId);
+      const due = new Date(); due.setDate(due.getDate() + 14);
+      setReceipt({
+        libraryName,
+        loanCode: r.id.slice(0, 8).toUpperCase(),
+        bookTitle: book?.titulo ?? "",
+        bookAuthor: book?.autor,
+        bookIsbn: book?.isbn,
+        memberName: profile?.nome ?? profile?.email ?? "",
+        memberNumber: profile?.numero,
+        loanDate: new Date(),
+        dueDate: due,
+        finePerDay,
+      });
       setOpen(false); setBookId(""); setUserId("");
       qc.invalidateQueries();
     } catch (e: any) {
@@ -73,6 +102,21 @@ function LoansPage() {
     } catch (e: any) {
       toast.error(e.message);
     }
+  };
+
+  const reprintReceipt = (l: any) => {
+    setReceipt({
+      libraryName,
+      loanCode: l.id.slice(0, 8).toUpperCase(),
+      bookTitle: l.books?.titulo ?? "",
+      bookAuthor: l.books?.autor,
+      bookIsbn: l.books?.isbn,
+      memberName: l.profiles?.nome ?? l.profiles?.email ?? "",
+      memberNumber: l.profiles?.numero,
+      loanDate: new Date(l.data_emprestimo),
+      dueDate: new Date(l.data_devolucao_prevista),
+      finePerDay,
+    });
   };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -94,6 +138,7 @@ function LoansPage() {
               <TableRow>
                 <TableHead>Livro</TableHead>
                 <TableHead>Membro</TableHead>
+                <TableHead>Nº</TableHead>
                 <TableHead>Emprestado em</TableHead>
                 <TableHead>Devolução prevista</TableHead>
                 <TableHead>Status</TableHead>
@@ -103,13 +148,14 @@ function LoansPage() {
             </TableHeader>
             <TableBody>
               {loans.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum empréstimo registrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum empréstimo registrado</TableCell></TableRow>
               ) : loans.map((l: any) => {
                 const isOverdue = l.status === "ativo" && l.data_devolucao_prevista < today;
                 return (
                   <TableRow key={l.id}>
                     <TableCell className="font-medium">{l.books?.titulo}</TableCell>
                     <TableCell>{l.profiles?.nome || l.profiles?.email || "—"}</TableCell>
+                    <TableCell className="font-mono text-xs">{l.profiles?.numero ?? "—"}</TableCell>
                     <TableCell className="text-sm">{new Date(l.data_emprestimo).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell className="text-sm">{new Date(l.data_devolucao_prevista).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell>
@@ -118,9 +164,10 @@ function LoansPage() {
                         : <Badge>Ativo</Badge>}
                     </TableCell>
                     <TableCell className="text-sm">{l.multa && Number(l.multa) > 0 ? `R$ ${Number(l.multa).toFixed(2)}` : "—"}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-1">
+                      <Button size="sm" variant="ghost" onClick={() => reprintReceipt(l)}><Printer className="h-3 w-3" /></Button>
                       {l.status === "ativo" && (
-                        <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Registrar Devolução</Button>
+                        <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Devolver</Button>
                       )}
                     </TableCell>
                   </TableRow>
@@ -152,7 +199,7 @@ function LoansPage() {
                 <SelectTrigger><SelectValue placeholder="Selecione o membro" /></SelectTrigger>
                 <SelectContent>
                   {profiles.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{p.nome || p.email}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>{(p.nome || p.email)}{p.numero ? ` — Nº ${p.numero}` : ""}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -162,6 +209,27 @@ function LoansPage() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreate}>Registrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!receipt} onOpenChange={(o) => !o && setReceipt(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Comprovante de Empréstimo</DialogTitle></DialogHeader>
+          {receipt && (
+            <div className="space-y-2 text-sm">
+              <div><strong>Biblioteca:</strong> {receipt.libraryName}</div>
+              <div><strong>Código:</strong> <span className="font-mono">{receipt.loanCode}</span></div>
+              <div><strong>Livro:</strong> {receipt.bookTitle}</div>
+              <div><strong>Mutuário:</strong> {receipt.memberName} {receipt.memberNumber && <span className="text-muted-foreground">(Nº {receipt.memberNumber})</span>}</div>
+              <div><strong>Devolução até:</strong> {receipt.dueDate.toLocaleDateString("pt-BR")}</div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReceipt(null)}>Fechar</Button>
+            <Button onClick={() => receipt && generateReceiptPdf(receipt)}>
+              <Printer className="h-4 w-4 mr-2" />Imprimir A6
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

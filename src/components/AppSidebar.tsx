@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
+import { useLibraryName } from "@/lib/library";
 
 interface NavItem { title: string; url: string; icon: any; staff?: boolean; adminOnly?: boolean }
 
@@ -23,6 +24,7 @@ const items: NavItem[] = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isStaff, isAdmin, user, signOut, roles } = useAuth();
+  const libraryName = useLibraryName();
 
   const visible = items.filter((i) => {
     if (i.adminOnly) return isAdmin;
@@ -39,8 +41,8 @@ export function AppSidebar() {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
             <BookOpen className="h-5 w-5" />
           </div>
-          <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <span className="text-sm font-semibold text-sidebar-foreground">Biblioteca</span>
+          <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
+            <span className="text-sm font-semibold text-sidebar-foreground truncate">{libraryName}</span>
             <span className="text-xs text-sidebar-foreground/60">Sistema de Gestão</span>
           </div>
         </Link>

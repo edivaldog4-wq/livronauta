@@ -85,6 +85,7 @@ function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-20">Nº</TableHead>
                   <TableHead>Nome</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Telefone</TableHead>
@@ -96,6 +97,7 @@ function UsersPage() {
               <TableBody>
                 {profiles.map((p: any) => (
                   <TableRow key={p.id}>
+                    <TableCell className="font-mono text-xs">{p.numero ?? "—"}</TableCell>
                     <TableCell>
                       <Input className="h-8" defaultValue={p.nome} onBlur={(e) => e.target.value !== p.nome && updateProfile(p.id, { nome: e.target.value })} />
                     </TableCell>
