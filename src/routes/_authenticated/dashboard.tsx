@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { BookOpen, RefreshCw, Users, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { bootstrapAdmin } from "@/lib/loans.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { useLibraryName } from "@/lib/library";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Biblioteca" }] }),
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function DashboardPage() {
   const { isStaff, isAdmin, refreshRoles } = useAuth();
   const promote = useServerFn(bootstrapAdmin);
+  const libraryName = useLibraryName();
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -62,6 +65,18 @@ function DashboardPage() {
     },
   });
 
+  const { data: history = [] } = useQuery({
+    queryKey: ["loans-global-history"],
+    enabled: isStaff,
+    queryFn: async () => {
+      const { data } = await supabase.from("loans")
+        .select("*, books(titulo), profiles(nome, numero)")
+        .order("data_emprestimo", { ascending: false })
+        .limit(100);
+      return data ?? [];
+    },
+  });
+
   const handleBootstrap = async () => {
     const r = await promote();
     if (r.promoted) {
@@ -73,10 +88,12 @@ function DashboardPage() {
     }
   };
 
+  const today = new Date().toISOString().slice(0, 10);
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">{libraryName}</h1>
         <p className="text-muted-foreground text-sm">Visão geral da biblioteca</p>
       </div>
 
@@ -119,6 +136,49 @@ function DashboardPage() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Histórico de Empréstimos</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Livro</TableHead>
+                    <TableHead>Mutuário</TableHead>
+                    <TableHead>Nº</TableHead>
+                    <TableHead>Emprestado</TableHead>
+                    <TableHead>Devolução prevista</TableHead>
+                    <TableHead>Devolvido</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Multa</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {history.length === 0 ? (
+                    <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">Sem registros</TableCell></TableRow>
+                  ) : history.map((l: any) => {
+                    const overdue = l.status === "ativo" && l.data_devolucao_prevista < today;
+                    return (
+                      <TableRow key={l.id}>
+                        <TableCell className="font-medium">{l.books?.titulo ?? "—"}</TableCell>
+                        <TableCell>{l.profiles?.nome ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{l.profiles?.numero ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{new Date(l.data_emprestimo).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell className="text-sm">{new Date(l.data_devolucao_prevista).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell className="text-sm">{l.data_devolucao_real ? new Date(l.data_devolucao_real).toLocaleDateString("pt-BR") : "—"}</TableCell>
+                        <TableCell>
+                          {l.status === "concluido" ? <Badge variant="secondary">Concluído</Badge>
+                            : overdue ? <Badge variant="destructive">Atrasado</Badge>
+                            : <Badge>Ativo</Badge>}
+                        </TableCell>
+                        <TableCell className="text-sm">{Number(l.multa ?? 0) > 0 ? `R$ ${Number(l.multa).toFixed(2)}` : "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </>

@@ -55,9 +55,17 @@ function ProfilePage() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6 max-w-4xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
-        <p className="text-muted-foreground text-sm">Gerencie seus dados e veja seu histórico</p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Meu Perfil</h1>
+          <p className="text-muted-foreground text-sm">Gerencie seus dados e veja seu histórico</p>
+        </div>
+        {profile?.numero && (
+          <div className="rounded-lg border bg-card px-4 py-2">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Número do Perfil</p>
+            <p className="font-mono text-2xl font-bold tracking-widest">{profile.numero}</p>
+          </div>
+        )}
       </div>
 
       <Card>

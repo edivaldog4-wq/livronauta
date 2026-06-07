@@ -6,15 +6,16 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash2, Search, Download } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchBookByIsbn } from "@/lib/openlibrary.functions";
+import { BarcodeScanner } from "@/components/BarcodeScanner";
 
 export const Route = createFileRoute("/_authenticated/books")({
   head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
@@ -23,18 +24,9 @@ export const Route = createFileRoute("/_authenticated/books")({
 
 type BookForm = {
   id?: string;
-  titulo: string;
-  autor: string;
-  isbn: string;
-  editora: string;
-  ano: string;
-  numero_paginas: string;
-  idioma: string;
-  sinopse: string;
-  capa_url: string;
-  quantidade_total: string;
-  localizacao_prateleira: string;
-  categoria_id: string;
+  titulo: string; autor: string; isbn: string; editora: string; ano: string; numero_paginas: string;
+  idioma: string; sinopse: string; capa_url: string; quantidade_total: string;
+  localizacao_prateleira: string; categoria_id: string;
 };
 
 const emptyForm: BookForm = {
@@ -49,6 +41,7 @@ function BooksPage() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BookForm>(emptyForm);
   const [isbnLoading, setIsbnLoading] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const importIsbn = useServerFn(fetchBookByIsbn);
 
   const { data: books = [] } = useQuery({
@@ -67,6 +60,11 @@ function BooksPage() {
     queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
   });
 
+  const { data: shelves = [] } = useQuery({
+    queryKey: ["shelves"],
+    queryFn: async () => (await supabase.from("shelves").select("*").order("nome")).data ?? [],
+  });
+
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
   const openNew = () => { setForm(emptyForm); setOpen(true); };
@@ -81,14 +79,16 @@ function BooksPage() {
     setOpen(true);
   };
 
-  const importByIsbn = async () => {
-    if (!form.isbn) return toast.error("Informe o ISBN primeiro");
+  const importByIsbn = async (isbnOverride?: string) => {
+    const isbn = isbnOverride ?? form.isbn;
+    if (!isbn) return toast.error("Informe ou escaneie um código primeiro");
     setIsbnLoading(true);
     try {
-      const r = await importIsbn({ data: { isbn: form.isbn } });
-      if (!r.found) return toast.error("ISBN não encontrado na Open Library");
+      const r = await importIsbn({ data: { isbn } });
+      if (!r.found) return toast.error("Código não encontrado na Open Library");
       setForm((f) => ({
         ...f,
+        isbn: r.isbn || f.isbn,
         titulo: r.titulo || f.titulo,
         autor: r.autor || f.autor,
         editora: r.editora || f.editora,
@@ -103,6 +103,13 @@ function BooksPage() {
     } finally {
       setIsbnLoading(false);
     }
+  };
+
+  const onScanned = (code: string) => {
+    setForm((f) => ({ ...f, isbn: code }));
+    setScannerOpen(false);
+    toast.success(`Código lido: ${code}`);
+    importByIsbn(code);
   };
 
   const handleSave = async () => {
@@ -165,6 +172,7 @@ function BooksPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-14">Capa</TableHead>
                   <TableHead>Título</TableHead>
                   <TableHead>Autor</TableHead>
                   <TableHead>Categoria</TableHead>
@@ -175,9 +183,18 @@ function BooksPage() {
               </TableHeader>
               <TableBody>
                 {books.length === 0 ? (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
                 ) : books.map((b: any) => (
                   <TableRow key={b.id}>
+                    <TableCell>
+                      {b.capa_url ? (
+                        <img src={b.capa_url} alt={b.titulo} className="h-12 w-9 object-cover rounded shadow-sm" loading="lazy" />
+                      ) : (
+                        <div className="h-12 w-9 rounded bg-muted flex items-center justify-center text-muted-foreground">
+                          <BookOpen className="h-4 w-4" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="font-medium">{b.titulo}</TableCell>
                     <TableCell>{b.autor}</TableCell>
                     <TableCell className="text-muted-foreground">{b.categories?.nome ?? "—"}</TableCell>
@@ -199,13 +216,16 @@ function BooksPage() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{form.id ? "Editar Livro" : "Novo Livro"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="md:col-span-2 flex gap-2 items-end">
-              <div className="flex-1 space-y-1">
-                <Label>ISBN</Label>
+            <div className="md:col-span-2 flex gap-2 items-end flex-wrap">
+              <div className="flex-1 min-w-[180px] space-y-1">
+                <Label>ISBN / Código de barras</Label>
                 <Input value={form.isbn} onChange={(e) => setForm({ ...form, isbn: e.target.value })} />
               </div>
-              <Button type="button" variant="secondary" onClick={importByIsbn} disabled={isbnLoading}>
-                <Download className="h-4 w-4 mr-2" />{isbnLoading ? "Buscando..." : "Importar por ISBN"}
+              <Button type="button" variant="secondary" onClick={() => importByIsbn()} disabled={isbnLoading}>
+                <Download className="h-4 w-4 mr-2" />{isbnLoading ? "Buscando..." : "Buscar"}
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setScannerOpen(true)}>
+                <ScanLine className="h-4 w-4 mr-2" />Escanear
               </Button>
             </div>
             <div className="md:col-span-2 space-y-1"><Label>Título *</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} /></div>
@@ -225,7 +245,16 @@ function BooksPage() {
               </Select>
             </div>
             <div className="space-y-1"><Label>Quantidade Total</Label><Input type="number" min={1} value={form.quantidade_total} onChange={(e) => setForm({ ...form, quantidade_total: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Prateleira</Label><Input value={form.localizacao_prateleira} onChange={(e) => setForm({ ...form, localizacao_prateleira: e.target.value })} /></div>
+            <div className="space-y-1">
+              <Label>Estante / Prateleira</Label>
+              <Select value={form.localizacao_prateleira || "none"} onValueChange={(v) => setForm({ ...form, localizacao_prateleira: v === "none" ? "" : v })}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Nenhuma —</SelectItem>
+                  {shelves.map((s: any) => <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="md:col-span-2 space-y-1"><Label>URL da Capa</Label><Input value={form.capa_url} onChange={(e) => setForm({ ...form, capa_url: e.target.value })} /></div>
             <div className="md:col-span-2 space-y-1"><Label>Sinopse</Label><Textarea rows={3} value={form.sinopse} onChange={(e) => setForm({ ...form, sinopse: e.target.value })} /></div>
           </div>
@@ -235,6 +264,8 @@ function BooksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onResult={onScanned} />
     </div>
   );
 }
