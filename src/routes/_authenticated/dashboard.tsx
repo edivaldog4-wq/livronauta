@@ -1,14 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, RefreshCw, Users, AlertTriangle } from "lucide-react";
+import { BookOpen, RefreshCw, Users, AlertTriangle, Check, X, Inbox } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { bootstrapAdmin } from "@/lib/loans.functions";
+import { approveLoanRequest, bootstrapAdmin, rejectLoanRequest } from "@/lib/loans.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useLibraryName } from "@/lib/library";
@@ -20,11 +20,16 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function DashboardPage() {
   const { isStaff, isAdmin, refreshRoles } = useAuth();
+  const qc = useQueryClient();
   const promote = useServerFn(bootstrapAdmin);
+  const approve = useServerFn(approveLoanRequest);
+  const reject = useServerFn(rejectLoanRequest);
   const libraryName = useLibraryName();
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const [books, loans, members, overdue, anyAdmin] = await Promise.all([
         supabase.from("books").select("quantidade_total,quantidade_disponivel"),
@@ -48,6 +53,7 @@ function DashboardPage() {
 
   const { data: loanHistory = [] } = useQuery({
     queryKey: ["loan-history"],
+    refetchOnMount: "always",
     queryFn: async () => {
       const since = new Date(); since.setDate(since.getDate() - 30);
       const { data } = await supabase.from("loans").select("data_emprestimo").gte("data_emprestimo", since.toISOString());
@@ -68,11 +74,28 @@ function DashboardPage() {
   const { data: history = [] } = useQuery({
     queryKey: ["loans-global-history"],
     enabled: isStaff,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase.from("loans")
         .select("*, books(titulo), profiles(nome, numero)")
         .order("data_emprestimo", { ascending: false })
         .limit(100);
+      return data ?? [];
+    },
+  });
+
+  const { data: pendingRequests = [] } = useQuery({
+    queryKey: ["pending-requests"],
+    enabled: isStaff,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data } = await supabase.from("loan_requests")
+        .select("*, books(titulo, autor), profiles(nome, email, numero)")
+        .eq("status", "pendente")
+        .order("created_at", { ascending: true });
       return data ?? [];
     },
   });
@@ -86,6 +109,35 @@ function DashboardPage() {
     } else {
       toast.error("Já existe um administrador.");
     }
+  };
+
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["pending-requests"] });
+    qc.invalidateQueries({ queryKey: ["loans-global-history"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    qc.invalidateQueries({ queryKey: ["loans"] });
+    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
+    qc.invalidateQueries({ queryKey: ["my-loans"] });
+    qc.invalidateQueries({ queryKey: ["my-requests"] });
+    qc.invalidateQueries({ queryKey: ["loan-history"] });
+  };
+
+  const handleApprove = async (id: string) => {
+    try {
+      await approve({ data: { request_id: id, dias: 14 } });
+      toast.success("Solicitação aprovada");
+      invalidateAll();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleReject = async (id: string) => {
+    if (!confirm("Recusar esta solicitação?")) return;
+    try {
+      await reject({ data: { request_id: id } });
+      toast.success("Solicitação recusada");
+      invalidateAll();
+    } catch (e: any) { toast.error(e.message); }
   };
 
   const today = new Date().toISOString().slice(0, 10);
@@ -111,7 +163,7 @@ function DashboardPage() {
 
       {!isStaff ? (
         <Card><CardContent className="py-12 text-center text-muted-foreground">
-          O dashboard é exclusivo para Bibliotecários e Administradores.
+          O dashboard administrativo é exclusivo para Bibliotecários e Administradores. Acesse <a href="/profile" className="underline">Meu Perfil</a> para solicitar empréstimos.
         </CardContent></Card>
       ) : (
         <>
@@ -121,6 +173,44 @@ function DashboardPage() {
             <StatCard icon={Users} label="Membros" value={stats?.membros ?? 0} color="text-emerald-600" />
             <StatCard icon={AlertTriangle} label="Atrasados" value={stats?.atrasados ?? 0} color="text-red-600" />
           </div>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2"><Inbox className="h-5 w-5" />Solicitações Pendentes</CardTitle>
+              <Badge variant={pendingRequests.length > 0 ? "default" : "secondary"}>{pendingRequests.length}</Badge>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              {pendingRequests.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma solicitação pendente.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Livro</TableHead>
+                      <TableHead>Solicitante</TableHead>
+                      <TableHead>Nº</TableHead>
+                      <TableHead>Solicitado em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingRequests.map((r: any) => (
+                      <TableRow key={r.id}>
+                        <TableCell className="font-medium">{r.books?.titulo ?? "—"}<br /><span className="text-xs text-muted-foreground">{r.books?.autor}</span></TableCell>
+                        <TableCell>{r.profiles?.nome ?? r.profiles?.email ?? "—"}</TableCell>
+                        <TableCell className="font-mono text-xs">{r.profiles?.numero ?? "—"}</TableCell>
+                        <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
+                        <TableCell className="text-right space-x-1 whitespace-nowrap">
+                          <Button size="sm" onClick={() => handleApprove(r.id)}><Check className="h-3 w-3 mr-1" />Aprovar</Button>
+                          <Button size="sm" variant="outline" onClick={() => handleReject(r.id)}><X className="h-3 w-3 mr-1" />Recusar</Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader><CardTitle>Empréstimos nos últimos 30 dias</CardTitle></CardHeader>

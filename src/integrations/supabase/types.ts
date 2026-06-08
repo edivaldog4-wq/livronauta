@@ -129,6 +129,39 @@ export type Database = {
           },
         ]
       }
+      loan_requests: {
+        Row: {
+          book_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          observacao: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          observacao?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          observacao?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       loans: {
         Row: {
           book_id: string
@@ -309,6 +342,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_loan_request: {
+        Args: { _dias?: number; _request_id: string }
+        Returns: string
+      }
       bootstrap_first_admin: { Args: never; Returns: boolean }
       create_loan: {
         Args: { _book_id: string; _dias?: number; _user_id: string }
@@ -323,7 +360,16 @@ export type Database = {
         Returns: boolean
       }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      reject_loan_request: { Args: { _request_id: string }; Returns: boolean }
+      request_loan: {
+        Args: { _book_id: string; _observacao?: string }
+        Returns: string
+      }
       return_loan: { Args: { _loan_id: string }; Returns: number }
+      update_loan_due_date: {
+        Args: { _loan_id: string; _new_date: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "bibliotecario" | "membro"
