@@ -1,17 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2 } from "lucide-react";
+import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2, RotateCcw, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppLayout } from "@/components/AppLayout";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useLibraryName } from "@/lib/library";
+import { useServerFn } from "@tanstack/react-start";
+import { requestLoan, returnLoan } from "@/lib/loans.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/catalog")({
   head: () => ({ meta: [{ title: "Catálogo — Biblioteca" }] }),
@@ -19,11 +22,14 @@ export const Route = createFileRoute("/catalog")({
 });
 
 function CatalogPage() {
-  const { user } = useAuth();
+  const { user, isStaff } = useAuth();
+  const qc = useQueryClient();
   const libraryName = useLibraryName();
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [availability, setAvailability] = useState<string>("all");
+  const reqLoan = useServerFn(requestLoan);
+  const retLoan = useServerFn(returnLoan);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -43,6 +49,31 @@ function CatalogPage() {
     },
   });
 
+  // Active loans of current user — to know which cards show "Devolver"
+  const { data: myActiveLoans = [] } = useQuery({
+    queryKey: ["my-active-loans", user?.id],
+    enabled: !!user,
+    queryFn: async () => (await supabase.from("loans").select("id, book_id").eq("user_id", user!.id).eq("status", "ativo")).data ?? [],
+  });
+
+  // Active loans visible to staff for any book — to show "Devolver" on every borrowed card
+  const { data: allActiveLoans = [] } = useQuery({
+    queryKey: ["all-active-loans"],
+    enabled: !!user && isStaff,
+    queryFn: async () => (await supabase.from("loans").select("id, book_id").eq("status", "ativo")).data ?? [],
+  });
+
+  // User pending requests
+  const { data: myPending = [] } = useQuery({
+    queryKey: ["my-pending-requests", user?.id],
+    enabled: !!user,
+    queryFn: async () => (await supabase.from("loan_requests").select("book_id").eq("user_id", user!.id).eq("status", "pendente")).data ?? [],
+  });
+
+  const myLoanByBook = new Map(myActiveLoans.map((l: any) => [l.book_id, l.id]));
+  const anyLoanByBook = new Map(allActiveLoans.map((l: any) => [l.book_id, l.id]));
+  const pendingBooks = new Set(myPending.map((r: any) => r.book_id));
+
   const { data: allBooks = [] } = useQuery({
     queryKey: ["all-books-stats"],
     queryFn: async () => (await supabase.from("books").select("autor, quantidade_total, quantidade_disponivel, categories(nome)")).data ?? [],
@@ -61,6 +92,38 @@ function CatalogPage() {
     return { totalLivros, disponiveis, autores, categorias: Object.keys(catMap).length, chart };
   })();
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["all-books-stats"] });
+    qc.invalidateQueries({ queryKey: ["my-active-loans"] });
+    qc.invalidateQueries({ queryKey: ["all-active-loans"] });
+    qc.invalidateQueries({ queryKey: ["my-pending-requests"] });
+    qc.invalidateQueries({ queryKey: ["my-loans"] });
+    qc.invalidateQueries({ queryKey: ["my-requests"] });
+    qc.invalidateQueries({ queryKey: ["loans"] });
+    qc.invalidateQueries({ queryKey: ["loans-global-history"] });
+    qc.invalidateQueries({ queryKey: ["pending-requests"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+  };
+
+  const handleRequest = async (bookId: string) => {
+    try {
+      await reqLoan({ data: { book_id: bookId } });
+      toast.success("Solicitação enviada! Aguarde aprovação.");
+      invalidateAll();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
+  const handleReturn = async (loanId: string) => {
+    if (!confirm("Confirmar devolução deste livro?")) return;
+    try {
+      const r = await retLoan({ data: { loan_id: loanId } });
+      if (r.multa > 0) toast.warning(`Devolução registrada. Multa: R$ ${r.multa.toFixed(2)}`);
+      else toast.success("Devolução registrada");
+      invalidateAll();
+    } catch (e: any) { toast.error(e.message); }
+  };
+
   const content = (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -73,7 +136,6 @@ function CatalogPage() {
         )}
       </div>
 
-      {/* Estatísticas */}
       <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
         <StatTile icon={LibIcon} label="Exemplares" value={stats.totalLivros} />
         <StatTile icon={CheckCircle2} label="Disponíveis" value={stats.disponiveis} />
@@ -129,27 +191,54 @@ function CatalogPage() {
         <Card><CardContent className="py-12 text-center text-muted-foreground">Nenhum livro encontrado.</CardContent></Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {books.map((b: any) => (
-            <Card key={b.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="aspect-[2/3] bg-muted relative">
-                {b.capa_url ? (
-                  <img src={b.capa_url} alt={b.titulo} className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                    <BookOpen className="h-10 w-10" />
+          {books.map((b: any) => {
+            const myLoanId = myLoanByBook.get(b.id);
+            const anyLoanId = anyLoanByBook.get(b.id);
+            const isBorrowed = b.quantidade_disponivel === 0;
+            const pending = pendingBooks.has(b.id);
+            return (
+              <Card key={b.id} className="overflow-hidden hover:shadow-lg transition-shadow flex flex-col">
+                <div className="aspect-[2/3] bg-muted relative">
+                  {b.capa_url ? (
+                    <img src={b.capa_url} alt={b.titulo} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                      <BookOpen className="h-10 w-10" />
+                    </div>
+                  )}
+                  <Badge variant={b.quantidade_disponivel > 0 ? "default" : "secondary"} className="absolute top-2 right-2">
+                    {b.quantidade_disponivel > 0 ? "Disponível" : "Emprestado"}
+                  </Badge>
+                </div>
+                <CardContent className="p-3 space-y-2 flex-1 flex flex-col">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm line-clamp-2">{b.titulo}</h3>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{b.autor}</p>
+                    {b.categories?.nome && <p className="text-[10px] uppercase tracking-wide text-muted-foreground/80">{b.categories.nome}</p>}
                   </div>
-                )}
-                <Badge variant={b.quantidade_disponivel > 0 ? "default" : "secondary"} className="absolute top-2 right-2">
-                  {b.quantidade_disponivel > 0 ? "Disponível" : "Emprestado"}
-                </Badge>
-              </div>
-              <CardContent className="p-3 space-y-1">
-                <h3 className="font-semibold text-sm line-clamp-2">{b.titulo}</h3>
-                <p className="text-xs text-muted-foreground line-clamp-1">{b.autor}</p>
-                {b.categories?.nome && <p className="text-[10px] uppercase tracking-wide text-muted-foreground/80">{b.categories.nome}</p>}
-              </CardContent>
-            </Card>
-          ))}
+                  {user && (
+                    <div className="pt-1">
+                      {myLoanId ? (
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => handleReturn(myLoanId as string)}>
+                          <RotateCcw className="h-3 w-3 mr-1" />Devolver
+                        </Button>
+                      ) : isStaff && isBorrowed && anyLoanId ? (
+                        <Button size="sm" variant="outline" className="w-full" onClick={() => handleReturn(anyLoanId as string)}>
+                          <RotateCcw className="h-3 w-3 mr-1" />Devolver
+                        </Button>
+                      ) : pending ? (
+                        <Button size="sm" variant="secondary" className="w-full" disabled>Solicitado</Button>
+                      ) : !isBorrowed ? (
+                        <Button size="sm" className="w-full" onClick={() => handleRequest(b.id)}>
+                          <Send className="h-3 w-3 mr-1" />Solicitar
+                        </Button>
+                      ) : null}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>
