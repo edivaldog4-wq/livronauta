@@ -38,7 +38,7 @@ export const requestLoan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("request_loan", {
       _book_id: data.book_id,
-      _observacao: data.observacao ?? null,
+      _observacao: data.observacao ?? undefined,
     });
     if (error) throw new Error(error.message);
     return { id };
