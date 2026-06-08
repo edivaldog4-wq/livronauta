@@ -4,16 +4,17 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Plus, Printer } from "lucide-react";
+import { Plus, Printer, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
-import { createLoan, returnLoan } from "@/lib/loans.functions";
+import { createLoan, returnLoan, updateLoanDueDate } from "@/lib/loans.functions";
 import { useLibraryName } from "@/lib/library";
 import { generateReceiptPdf } from "@/lib/receipt";
 
@@ -30,8 +31,11 @@ function LoansPage() {
   const [bookId, setBookId] = useState("");
   const [userId, setUserId] = useState("");
   const [receipt, setReceipt] = useState<any | null>(null);
+  const [editLoan, setEditLoan] = useState<any | null>(null);
+  const [editDate, setEditDate] = useState("");
   const create = useServerFn(createLoan);
   const ret = useServerFn(returnLoan);
+  const updateDue = useServerFn(updateLoanDueDate);
 
   const { data: loans = [] } = useQuery({
     queryKey: ["loans"],
@@ -65,6 +69,19 @@ function LoansPage() {
 
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: ["loans"] });
+    qc.invalidateQueries({ queryKey: ["available-books"] });
+    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
+    qc.invalidateQueries({ queryKey: ["loans-global-history"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+    qc.invalidateQueries({ queryKey: ["my-loans"] });
+    qc.invalidateQueries({ queryKey: ["my-requests"] });
+    qc.invalidateQueries({ queryKey: ["pending-requests"] });
+    qc.invalidateQueries({ queryKey: ["loan-history"] });
+  };
+
   const handleCreate = async () => {
     if (!bookId || !userId) return toast.error("Selecione livro e usuário");
     try {
@@ -86,7 +103,7 @@ function LoansPage() {
         finePerDay,
       });
       setOpen(false); setBookId(""); setUserId("");
-      qc.invalidateQueries();
+      invalidateAll();
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -98,7 +115,24 @@ function LoansPage() {
       const r = await ret({ data: { loan_id: loanId } });
       if (r.multa > 0) toast.warning(`Devolução registrada. Multa: R$ ${r.multa.toFixed(2)}`);
       else toast.success("Devolução registrada");
-      qc.invalidateQueries();
+      invalidateAll();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const openEditDate = (l: any) => {
+    setEditLoan(l);
+    setEditDate(l.data_devolucao_prevista);
+  };
+
+  const saveEditDate = async () => {
+    if (!editLoan || !editDate) return;
+    try {
+      await updateDue({ data: { loan_id: editLoan.id, new_date: editDate } });
+      toast.success("Data de devolução atualizada");
+      setEditLoan(null);
+      invalidateAll();
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -141,6 +175,7 @@ function LoansPage() {
                 <TableHead>Nº</TableHead>
                 <TableHead>Emprestado em</TableHead>
                 <TableHead>Devolução prevista</TableHead>
+                <TableHead>Devolvido</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Multa</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -148,7 +183,7 @@ function LoansPage() {
             </TableHeader>
             <TableBody>
               {loans.length === 0 ? (
-                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum empréstimo registrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground py-8">Nenhum empréstimo registrado</TableCell></TableRow>
               ) : loans.map((l: any) => {
                 const isOverdue = l.status === "ativo" && l.data_devolucao_prevista < today;
                 return (
@@ -158,16 +193,20 @@ function LoansPage() {
                     <TableCell className="font-mono text-xs">{l.profiles?.numero ?? "—"}</TableCell>
                     <TableCell className="text-sm">{new Date(l.data_emprestimo).toLocaleDateString("pt-BR")}</TableCell>
                     <TableCell className="text-sm">{new Date(l.data_devolucao_prevista).toLocaleDateString("pt-BR")}</TableCell>
+                    <TableCell className="text-sm">{l.data_devolucao_real ? new Date(l.data_devolucao_real).toLocaleDateString("pt-BR") : "—"}</TableCell>
                     <TableCell>
                       {l.status === "concluido" ? <Badge variant="secondary">Concluído</Badge>
                         : isOverdue ? <Badge variant="destructive">Atrasado</Badge>
                         : <Badge>Ativo</Badge>}
                     </TableCell>
                     <TableCell className="text-sm">{l.multa && Number(l.multa) > 0 ? `R$ ${Number(l.multa).toFixed(2)}` : "—"}</TableCell>
-                    <TableCell className="text-right space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => reprintReceipt(l)}><Printer className="h-3 w-3" /></Button>
+                    <TableCell className="text-right space-x-1 whitespace-nowrap">
+                      <Button size="sm" variant="ghost" onClick={() => reprintReceipt(l)} title="Imprimir comprovante"><Printer className="h-3 w-3" /></Button>
                       {l.status === "ativo" && (
-                        <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Devolver</Button>
+                        <>
+                          <Button size="sm" variant="ghost" onClick={() => openEditDate(l)} title="Editar data de devolução"><CalendarClock className="h-3 w-3" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Devolver</Button>
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
@@ -204,11 +243,33 @@ function LoansPage() {
                 </SelectContent>
               </Select>
             </div>
-            <p className="text-xs text-muted-foreground">Devolução prevista: 14 dias a partir de hoje.</p>
+            <p className="text-xs text-muted-foreground">Devolução prevista: 14 dias a partir de hoje. Você poderá ajustar a data depois.</p>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
             <Button onClick={handleCreate}>Registrar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editLoan} onOpenChange={(o) => !o && setEditLoan(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Alterar data de devolução</DialogTitle></DialogHeader>
+          {editLoan && (
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                <strong>Livro:</strong> {editLoan.books?.titulo}<br />
+                <strong>Mutuário:</strong> {editLoan.profiles?.nome ?? editLoan.profiles?.email}
+              </div>
+              <div className="space-y-1">
+                <Label>Nova data de devolução</Label>
+                <Input type="date" value={editDate} onChange={(e) => setEditDate(e.target.value)} />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditLoan(null)}>Cancelar</Button>
+            <Button onClick={saveEditDate}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
