@@ -15,16 +15,36 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
     if (!open) return;
     let cancelled = false;
     (async () => {
-      const { Html5Qrcode } = await import("html5-qrcode");
+      const mod = await import("html5-qrcode");
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod as any;
       if (cancelled || !ref.current) return;
       const id = "scanner-region";
       ref.current.id = id;
-      const scanner = new Html5Qrcode(id);
+      const formats = [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39,
+        Html5QrcodeSupportedFormats.ITF,
+        Html5QrcodeSupportedFormats.QR_CODE,
+      ];
+      const scanner = new Html5Qrcode(id, { formatsToSupport: formats, verbose: false });
       scannerRef.current = scanner;
       try {
         await scanner.start(
           { facingMode: "environment" },
-          { fps: 10, qrbox: { width: 250, height: 150 } },
+          {
+            fps: 15,
+            qrbox: (vw: number, vh: number) => {
+              const min = Math.min(vw, vh);
+              const w = Math.floor(min * 0.85);
+              return { width: w, height: Math.floor(w * 0.5) };
+            },
+            aspectRatio: 1.7777,
+            disableFlip: false,
+          },
           (decoded: string) => {
             onResult(decoded);
             scanner.stop().catch(() => {});
@@ -51,9 +71,11 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
       <DialogContent className="max-w-md">
         <DialogHeader><DialogTitle>Escanear código</DialogTitle></DialogHeader>
         <div className="rounded-lg overflow-hidden bg-black">
-          <div ref={ref} style={{ width: "100%", minHeight: 300 }} />
+          <div ref={ref} style={{ width: "100%", minHeight: 320 }} />
         </div>
-        <p className="text-xs text-muted-foreground">Aponte a câmera para o código de barras ou QR Code do livro.</p>
+        <p className="text-xs text-muted-foreground">
+          Aponte a câmera para o código de barras (EAN-13) do livro, mantendo o código centralizado e com boa iluminação. Funciona melhor a ~10–15 cm de distância.
+        </p>
       </DialogContent>
     </Dialog>
   );

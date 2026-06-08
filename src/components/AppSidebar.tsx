@@ -11,14 +11,14 @@ import { useLibraryName } from "@/lib/library";
 interface NavItem { title: string; url: string; icon: any; staff?: boolean; adminOnly?: boolean }
 
 const items: NavItem[] = [
-  { title: "Catálogo", url: "/catalog", icon: Library },
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, staff: true },
+  { title: "Catálogo", url: "/catalog", icon: Library },
   { title: "Acervo", url: "/books", icon: BookOpen, staff: true },
   { title: "Empréstimos", url: "/loans", icon: RefreshCw, staff: true },
-  { title: "Usuários", url: "/users", icon: Users, staff: true },
   { title: "Etiquetas", url: "/labels", icon: Tag, staff: true },
-  { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
+  { title: "Usuários", url: "/users", icon: Users, staff: true },
   { title: "Meu Perfil", url: "/profile", icon: UserIcon },
+  { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
 ];
 
 export function AppSidebar() {
@@ -49,7 +49,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navegação</SidebarGroupLabel>
+          <SidebarGroupLabel className="sr-only">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {visible.map((item) => (
