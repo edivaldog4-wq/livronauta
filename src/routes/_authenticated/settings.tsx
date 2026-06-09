@@ -152,6 +152,8 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <BackupSection />
     </div>
   );
 }
