@@ -9,13 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchBookByIsbn } from "@/lib/openlibrary.functions";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { booksToLibibCsv, downloadText } from "@/lib/libib-csv";
 
 export const Route = createFileRoute("/_authenticated/books")({
   head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
@@ -42,6 +44,7 @@ function BooksPage() {
   const [form, setForm] = useState<BookForm>(emptyForm);
   const [isbnLoading, setIsbnLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   const importIsbn = useServerFn(fetchBookByIsbn);
 
   const { data: books = [] } = useQuery({
@@ -85,7 +88,7 @@ function BooksPage() {
     setIsbnLoading(true);
     try {
       const r = await importIsbn({ data: { isbn } });
-      if (!r.found) return toast.error("Código não encontrado na Open Library");
+      if (!r.found) return toast.error("Código não encontrado (Open Library / Google Books). Preencha manualmente.");
       setForm((f) => ({
         ...f,
         isbn: r.isbn || f.isbn,
@@ -152,6 +155,13 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
+  const exportCsv = async () => {
+    const { data } = await supabase.from("books").select("*, categories(nome)").order("titulo");
+    if (!data?.length) return toast.error("Nenhum livro para exportar");
+    downloadText(`library_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.csv`, booksToLibibCsv(data));
+    toast.success(`${data.length} livros exportados`);
+  };
+
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -159,7 +169,11 @@ function BooksPage() {
           <h1 className="text-2xl md:text-3xl font-bold">Acervo</h1>
           <p className="text-muted-foreground text-sm">Gerencie os livros da biblioteca</p>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Novo Livro</Button>
+        <div className="flex gap-2 flex-wrap">
+          <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="h-4 w-4 mr-2" />Importar CSV</Button>
+          <Button variant="outline" onClick={exportCsv}><FileDown className="h-4 w-4 mr-2" />Exportar CSV</Button>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Novo Livro</Button>
+        </div>
       </div>
 
       <Card>
@@ -266,6 +280,7 @@ function BooksPage() {
       </Dialog>
 
       <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onResult={onScanned} />
+      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} />
     </div>
   );
 }

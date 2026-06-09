@@ -17,6 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { createLoan, returnLoan, updateLoanDueDate } from "@/lib/loans.functions";
 import { useLibraryName } from "@/lib/library";
 import { generateReceiptPdf } from "@/lib/receipt";
+import { useRealtime } from "@/lib/use-realtime";
 
 export const Route = createFileRoute("/_authenticated/loans")({
   head: () => ({ meta: [{ title: "Empréstimos — Biblioteca" }] }),
@@ -37,8 +38,16 @@ function LoansPage() {
   const ret = useServerFn(returnLoan);
   const updateDue = useServerFn(updateLoanDueDate);
 
+  useRealtime(
+    ["loans", "loan_requests", "books"],
+    [["loans"], ["available-books"], ["loans-global-history"], ["dashboard-stats"], ["pending-requests"], ["loan-history"], ["books-admin"], ["books"]],
+  );
+
   const { data: loans = [] } = useQuery({
     queryKey: ["loans"],
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase.from("loans")
         .select("*, books(titulo, autor, isbn), profiles(nome, email, numero)")

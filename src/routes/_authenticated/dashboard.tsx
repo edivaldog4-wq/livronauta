@@ -12,6 +12,7 @@ import { approveLoanRequest, bootstrapAdmin, rejectLoanRequest } from "@/lib/loa
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useLibraryName } from "@/lib/library";
+import { useRealtime } from "@/lib/use-realtime";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Biblioteca" }] }),
@@ -25,6 +26,10 @@ function DashboardPage() {
   const approve = useServerFn(approveLoanRequest);
   const reject = useServerFn(rejectLoanRequest);
   const libraryName = useLibraryName();
+  useRealtime(
+    ["loans", "loan_requests", "books"],
+    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"]],
+  );
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],

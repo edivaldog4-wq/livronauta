@@ -10,6 +10,7 @@ import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { BackupSection } from "@/components/BackupSection";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações — Biblioteca" }] }),
@@ -151,6 +152,8 @@ function SettingsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <BackupSection />
     </div>
   );
 }
