@@ -280,6 +280,7 @@ function BooksPage() {
       </Dialog>
 
       <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onResult={onScanned} />
+      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} />
     </div>
   );
 }
