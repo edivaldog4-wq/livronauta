@@ -38,8 +38,16 @@ function LoansPage() {
   const ret = useServerFn(returnLoan);
   const updateDue = useServerFn(updateLoanDueDate);
 
+  useRealtime(
+    ["loans", "loan_requests", "books"],
+    [["loans"], ["available-books"], ["loans-global-history"], ["dashboard-stats"], ["pending-requests"], ["loan-history"], ["books-admin"], ["books"]],
+  );
+
   const { data: loans = [] } = useQuery({
     queryKey: ["loans"],
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase.from("loans")
         .select("*, books(titulo, autor, isbn), profiles(nome, email, numero)")
