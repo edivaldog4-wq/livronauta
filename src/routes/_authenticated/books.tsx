@@ -88,7 +88,7 @@ function BooksPage() {
     setIsbnLoading(true);
     try {
       const r = await importIsbn({ data: { isbn } });
-      if (!r.found) return toast.error("Código não encontrado na Open Library");
+      if (!r.found) return toast.error("Código não encontrado (Open Library / Google Books). Preencha manualmente.");
       setForm((f) => ({
         ...f,
         isbn: r.isbn || f.isbn,
