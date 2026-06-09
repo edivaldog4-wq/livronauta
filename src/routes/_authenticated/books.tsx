@@ -44,6 +44,7 @@ function BooksPage() {
   const [form, setForm] = useState<BookForm>(emptyForm);
   const [isbnLoading, setIsbnLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [csvOpen, setCsvOpen] = useState(false);
   const importIsbn = useServerFn(fetchBookByIsbn);
 
   const { data: books = [] } = useQuery({
