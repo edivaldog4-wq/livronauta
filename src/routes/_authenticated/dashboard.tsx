@@ -12,6 +12,7 @@ import { approveLoanRequest, bootstrapAdmin, rejectLoanRequest } from "@/lib/loa
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useLibraryName } from "@/lib/library";
+import { useRealtime } from "@/lib/use-realtime";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Biblioteca" }] }),
