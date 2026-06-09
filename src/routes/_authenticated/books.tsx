@@ -9,13 +9,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { fetchBookByIsbn } from "@/lib/openlibrary.functions";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { CsvImportDialog } from "@/components/CsvImportDialog";
+import { booksToLibibCsv, downloadText } from "@/lib/libib-csv";
 
 export const Route = createFileRoute("/_authenticated/books")({
   head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
