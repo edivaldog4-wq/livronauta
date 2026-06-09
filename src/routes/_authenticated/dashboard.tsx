@@ -26,6 +26,10 @@ function DashboardPage() {
   const approve = useServerFn(approveLoanRequest);
   const reject = useServerFn(rejectLoanRequest);
   const libraryName = useLibraryName();
+  useRealtime(
+    ["loans", "loan_requests", "books"],
+    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"]],
+  );
 
   const { data: stats } = useQuery({
     queryKey: ["dashboard-stats"],
