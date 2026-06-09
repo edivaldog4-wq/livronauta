@@ -1,5 +1,12 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/")({
-  component: () => <Navigate to="/catalog" replace />,
+  ssr: false,
+  beforeLoad: async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data.user) throw redirect({ to: "/dashboard" });
+    throw redirect({ to: "/auth" });
+  },
+  component: () => null,
 });
