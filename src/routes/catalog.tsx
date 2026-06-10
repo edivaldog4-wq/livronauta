@@ -162,7 +162,7 @@ function CatalogPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{libraryName}</h1>
-          <p className="text-muted-foreground text-sm">{books.length} {books.length === 1 ? "livro encontrado" : "livros encontrados"}</p>
+          <p className="text-muted-foreground text-sm">{books.length}{hasNextPage ? "+" : ""} {books.length === 1 ? "livro" : "livros"} carregado{books.length === 1 ? "" : "s"}</p>
         </div>
         {!user && (
           <Button asChild><Link to="/auth"><LogIn className="h-4 w-4 mr-2" />Entrar</Link></Button>
