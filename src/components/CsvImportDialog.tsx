@@ -36,13 +36,13 @@ export function CsvImportDialog({ open, onClose }: Props) {
     queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
   });
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const processFile = async (f: File) => {
+    setProgress({ current: 0, total: 0, phase: "Lendo arquivo..." });
     const text = await f.text();
     const parsed = parseLibibCsv(text);
-    if (!parsed.length) return toast.error("Nenhuma linha válida encontrada");
+    if (!parsed.length) { setProgress(null); return toast.error("Nenhuma linha válida encontrada"); }
 
+    setProgress({ current: 0, total: parsed.length, phase: "Verificando duplicatas..." });
     const candidates = parsed.map(rowToBook);
     const isbns = candidates.map((c) => c.isbn).filter(Boolean) as string[];
     const titles = candidates.map((c) => c.titulo.toLowerCase());
@@ -64,7 +64,19 @@ export function CsvImportDialog({ open, onClose }: Props) {
       const dup = dupBy(c);
       return { ...c, dup, resolution: dup ? "skip" : "import", selected: true };
     }));
+    setProgress(null);
     toast.success(`${candidates.length} linhas carregadas`);
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (f) await processFile(f);
+  };
+
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f && /\.csv$/i.test(f.name)) await processFile(f);
+    else toast.error("Solte um arquivo .csv");
   };
 
   const setRow = (i: number, patch: Partial<Row>) =>
