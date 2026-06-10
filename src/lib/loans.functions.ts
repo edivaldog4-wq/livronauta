@@ -17,9 +17,17 @@ export const createLoan = createServerFn({ method: "POST" })
 
 export const returnLoan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ loan_id: z.string().uuid() }))
+  .inputValidator(z.object({
+    loan_id: z.string().uuid(),
+    observacao: z.string().max(1000).optional(),
+    condicao: z.string().max(50).optional(),
+  }))
   .handler(async ({ data, context }) => {
-    const { data: multa, error } = await context.supabase.rpc("return_loan", { _loan_id: data.loan_id });
+    const { data: multa, error } = await context.supabase.rpc("return_loan", {
+      _loan_id: data.loan_id,
+      _observacao: data.observacao ?? null,
+      _condicao: data.condicao ?? null,
+    } as any);
     if (error) throw new Error(error.message);
     return { multa: Number(multa ?? 0) };
   });
