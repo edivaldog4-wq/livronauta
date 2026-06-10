@@ -219,7 +219,7 @@ function LoansPage() {
                       {l.status === "ativo" && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => openEditDate(l)} title="Editar data de devolução"><CalendarClock className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Devolver</Button>
+                          <Button size="sm" variant="outline" onClick={() => openReturn(l)}>Devolver</Button>
                         </>
                       )}
                     </TableCell>
