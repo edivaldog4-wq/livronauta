@@ -195,26 +195,45 @@ function CatalogPage() {
       )}
 
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="relative md:col-span-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <CardContent className="pt-6 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="relative md:col-span-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {categories.map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>))}
+              </SelectContent>
+            </Select>
+            <Select value={availability} onValueChange={setAvailability}>
+              <SelectTrigger><SelectValue placeholder="Disponibilidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="available">Disponíveis</SelectItem>
+                <SelectItem value="unavailable">Emprestados</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {categories.map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>))}
-            </SelectContent>
-          </Select>
-          <Select value={availability} onValueChange={setAvailability}>
-            <SelectTrigger><SelectValue placeholder="Disponibilidade" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="available">Disponíveis</SelectItem>
-              <SelectItem value="unavailable">Emprestados</SelectItem>
-            </SelectContent>
-          </Select>
+          {shelves.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShelf("all")}
+                className={`text-xs px-3 py-1 rounded-full border transition ${shelf === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted"}`}
+              >Todas as estantes</button>
+              {shelves.map((s: any) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setShelf(s.nome === shelf ? "all" : s.nome)}
+                  className={`text-xs px-3 py-1 rounded-full border transition ${shelf === s.nome ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted"}`}
+                >{s.nome}</button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
