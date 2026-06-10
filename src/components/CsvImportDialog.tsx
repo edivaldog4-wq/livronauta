@@ -150,13 +150,20 @@ export function CsvImportDialog({ open, onClose }: Props) {
           <DialogTitle>Importar acervo (CSV no formato Libib)</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          className={`rounded-lg border-2 border-dashed p-4 text-center transition ${dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30"}`}
+        >
+          <p className="text-sm font-medium">Arraste e solte um arquivo CSV aqui</p>
+          <p className="text-xs text-muted-foreground mb-2">ou selecione manualmente abaixo</p>
+          <Input type="file" accept=".csv,text/csv" onChange={handleFile} className="max-w-sm mx-auto" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label>Arquivo .csv</Label>
-            <Input type="file" accept=".csv,text/csv" onChange={handleFile} />
-          </div>
-          <div className="space-y-1">
-            <Label>Estante existente</Label>
+            <Label>Estante existente (aplicada aos livros importados)</Label>
             <Select value={shelf} onValueChange={setShelf}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -166,10 +173,25 @@ export function CsvImportDialog({ open, onClose }: Props) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>...ou nova estante</Label>
+            <Label>...ou criar nova estante</Label>
             <Input placeholder="Ex.: Crítica Literária" value={newShelf} onChange={(e) => setNewShelf(e.target.value)} />
           </div>
         </div>
+
+        {progress && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{progress.phase}</span>
+              {progress.total > 0 && <span>{progress.current} / {progress.total}</span>}
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : "100%" }}
+              />
+            </div>
+          </div>
+        )}
 
         {rows.length > 0 && (
           <>
