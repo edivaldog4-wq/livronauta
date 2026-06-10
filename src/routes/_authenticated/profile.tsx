@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
+import { ReturnLoanDialog } from "@/components/ReturnLoanDialog";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Meu Perfil — Biblioteca" }] }),
