@@ -126,7 +126,7 @@ function CatalogPage() {
   })();
 
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["books-catalog"] });
     qc.invalidateQueries({ queryKey: ["all-books-stats"] });
     qc.invalidateQueries({ queryKey: ["my-active-loans"] });
     qc.invalidateQueries({ queryKey: ["all-active-loans"] });
