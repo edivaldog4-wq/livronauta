@@ -35,6 +35,7 @@ function LoansPage() {
   const [receipt, setReceipt] = useState<any | null>(null);
   const [editLoan, setEditLoan] = useState<any | null>(null);
   const [editDate, setEditDate] = useState("");
+  const [returnTarget, setReturnTarget] = useState<any | null>(null);
   const create = useServerFn(createLoan);
   const ret = useServerFn(returnLoan);
   const updateDue = useServerFn(updateLoanDueDate);
