@@ -102,12 +102,13 @@ function ProfilePage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const handleReturn = async (loanId: string) => {
-    if (!confirm("Confirmar devolução deste livro?")) return;
+  const confirmReturn = async (payload: { observacao?: string; condicao?: string }) => {
+    if (!returnTarget) return;
     try {
-      const r = await retLoan({ data: { loan_id: loanId } });
+      const r = await retLoan({ data: { loan_id: returnTarget.id, ...payload } });
       if (r.multa > 0) toast.warning(`Devolução registrada. Multa: R$ ${r.multa.toFixed(2)}`);
       else toast.success("Devolução registrada");
+      setReturnTarget(null);
       invalidateAll();
     } catch (e: any) { toast.error(e.message); }
   };
