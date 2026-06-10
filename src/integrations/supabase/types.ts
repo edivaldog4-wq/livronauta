@@ -169,6 +169,8 @@ export type Database = {
           data_devolucao_prevista: string
           data_devolucao_real: string | null
           data_emprestimo: string
+          devolucao_condicao: string | null
+          devolucao_observacao: string | null
           id: string
           multa: number | null
           status: Database["public"]["Enums"]["loan_status"]
@@ -180,6 +182,8 @@ export type Database = {
           data_devolucao_prevista: string
           data_devolucao_real?: string | null
           data_emprestimo?: string
+          devolucao_condicao?: string | null
+          devolucao_observacao?: string | null
           id?: string
           multa?: number | null
           status?: Database["public"]["Enums"]["loan_status"]
@@ -191,6 +195,8 @@ export type Database = {
           data_devolucao_prevista?: string
           data_devolucao_real?: string | null
           data_emprestimo?: string
+          devolucao_condicao?: string | null
+          devolucao_observacao?: string | null
           id?: string
           multa?: number | null
           status?: Database["public"]["Enums"]["loan_status"]
@@ -365,7 +371,12 @@ export type Database = {
         Args: { _book_id: string; _observacao?: string }
         Returns: string
       }
-      return_loan: { Args: { _loan_id: string }; Returns: number }
+      return_loan:
+        | { Args: { _loan_id: string }; Returns: number }
+        | {
+            Args: { _condicao?: string; _loan_id: string; _observacao?: string }
+            Returns: number
+          }
       update_loan_due_date: {
         Args: { _loan_id: string; _new_date: string }
         Returns: boolean
