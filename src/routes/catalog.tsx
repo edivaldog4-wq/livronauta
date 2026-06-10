@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/catalog")({
   component: CatalogPage,
 });
 
+const PAGE_SIZE = 24;
+
 function CatalogPage() {
   const { user, isStaff } = useAuth();
   const qc = useQueryClient();
@@ -28,26 +30,57 @@ function CatalogPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [availability, setAvailability] = useState<string>("all");
+  const [shelf, setShelf] = useState<string>("all");
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
   });
 
-  const { data: books = [], isLoading } = useQuery({
-    queryKey: ["books", search, categoryId, availability],
-    queryFn: async () => {
-      let q = supabase.from("books").select("*, categories(nome)").order("titulo");
+  const { data: shelves = [] } = useQuery({
+    queryKey: ["shelves"],
+    queryFn: async () => (await supabase.from("shelves").select("*").order("nome")).data ?? [],
+  });
+
+  const {
+    data: pages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["books-catalog", search, categoryId, availability, shelf],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let q = supabase.from("books").select("*, categories(nome)").order("titulo").range(from, to);
       if (search.trim()) q = q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`);
       if (categoryId !== "all") q = q.eq("categoria_id", categoryId);
       if (availability === "available") q = q.gt("quantidade_disponivel", 0);
       if (availability === "unavailable") q = q.eq("quantidade_disponivel", 0);
+      if (shelf !== "all") q = q.eq("localizacao_prateleira", shelf);
       const { data } = await q;
-      return data ?? [];
+      return { rows: data ?? [], next: (data?.length ?? 0) === PAGE_SIZE ? (pageParam as number) + 1 : null };
     },
+    getNextPageParam: (last) => last.next,
   });
+
+  const books = useMemo(() => (pages?.pages ?? []).flatMap((p) => p.rows), [pages]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   // Active loans of current user — to know which cards show "Devolver"
   const { data: myActiveLoans = [] } = useQuery({
