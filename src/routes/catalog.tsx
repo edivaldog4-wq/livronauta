@@ -293,6 +293,9 @@ function CatalogPage() {
           })}
         </div>
       )}
+      <div ref={sentinelRef} className="h-10 flex items-center justify-center text-xs text-muted-foreground">
+        {isFetchingNextPage ? "Carregando mais..." : hasNextPage ? "Role para carregar mais" : books.length > 0 ? "Fim do acervo" : ""}
+      </div>
     </div>
   );
 
