@@ -34,6 +34,7 @@ function ProfilePage() {
   const [returnTarget, setReturnTarget] = useState<any | null>(null);
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
+  useRealtime(["loans", "loan_requests"], [["my-loans"], ["my-requests"], ["available-books"]]);
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
