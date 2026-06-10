@@ -30,6 +30,7 @@ function ProfilePage() {
   const [endereco, setEndereco] = useState("");
   const [reqOpen, setReqOpen] = useState(false);
   const [reqBookId, setReqBookId] = useState("");
+  const [returnTarget, setReturnTarget] = useState<any | null>(null);
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
 
