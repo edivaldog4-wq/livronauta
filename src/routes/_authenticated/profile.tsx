@@ -227,7 +227,7 @@ function ProfilePage() {
                       <TableCell className="text-sm">{Number(l.multa ?? 0) > 0 ? `R$ ${Number(l.multa).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-right">
                         {l.status === "ativo" && (
-                          <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>
+                          <Button size="sm" variant="outline" onClick={() => setReturnTarget(l)}>
                             <RotateCcw className="h-3 w-3 mr-1" />Devolver
                           </Button>
                         )}
