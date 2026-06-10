@@ -84,6 +84,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
   const handleImport = async () => {
     setLoading(true);
+    const work = rows.filter((r) => r.selected && r.resolution !== "skip");
+    setProgress({ current: 0, total: work.length, phase: "Preparando..." });
     try {
       let shelfName: string | null = null;
       if (newShelf.trim()) {
@@ -95,8 +97,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
         shelfName = shelf;
       }
 
-      // resolve categories - create missing
-      const neededCats = Array.from(new Set(rows.filter((r) => r.selected && r.resolution !== "skip" && r.categoria_nome).map((r) => r.categoria_nome!)));
+      setProgress({ current: 0, total: work.length, phase: "Resolvendo categorias..." });
+      const neededCats = Array.from(new Set(work.filter((r) => r.categoria_nome).map((r) => r.categoria_nome!)));
       const catMap = new Map<string, string>();
       (categories as any[]).forEach((c) => catMap.set(c.nome.toLowerCase(), c.id));
       for (const name of neededCats) {
@@ -106,19 +108,14 @@ export function CsvImportDialog({ open, onClose }: Props) {
         }
       }
 
-      let imported = 0, updated = 0, skipped = 0;
-      for (const r of rows) {
-        if (!r.selected || r.resolution === "skip") { skipped++; continue; }
+      let imported = 0, updated = 0, skipped = rows.length - work.length, done = 0;
+      for (const r of work) {
+        done++;
+        setProgress({ current: done, total: work.length, phase: `Importando ${done} de ${work.length}: ${r.titulo.slice(0, 40)}` });
         const payload: any = {
-          titulo: r.titulo,
-          autor: r.autor,
-          isbn: r.isbn,
-          editora: r.editora,
-          ano: r.ano,
-          numero_paginas: r.numero_paginas,
-          sinopse: r.sinopse,
-          quantidade_total: r.quantidade_total,
-          localizacao_prateleira: shelfName,
+          titulo: r.titulo, autor: r.autor, isbn: r.isbn, editora: r.editora,
+          ano: r.ano, numero_paginas: r.numero_paginas, sinopse: r.sinopse,
+          quantidade_total: r.quantidade_total, localizacao_prateleira: shelfName,
           categoria_id: r.categoria_nome ? catMap.get(r.categoria_nome.toLowerCase()) ?? null : null,
         };
         if (r.resolution === "overwrite" && r.dup) {
@@ -132,13 +129,14 @@ export function CsvImportDialog({ open, onClose }: Props) {
       }
       toast.success(`Importação concluída: ${imported} adicionados, ${updated} atualizados, ${skipped} ignorados`);
       qc.invalidateQueries({ queryKey: ["books-admin"] });
-      qc.invalidateQueries({ queryKey: ["books"] });
+      qc.invalidateQueries({ queryKey: ["books-catalog"] });
       setRows([]);
       onClose();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
