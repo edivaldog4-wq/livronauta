@@ -308,6 +308,8 @@ function LoansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReturnLoanDialog open={!!returnTarget} loan={returnTarget} onClose={() => setReturnTarget(null)} onConfirm={confirmReturn} />
     </div>
   );
 }
