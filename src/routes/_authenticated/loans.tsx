@@ -18,6 +18,7 @@ import { createLoan, returnLoan, updateLoanDueDate } from "@/lib/loans.functions
 import { useLibraryName } from "@/lib/library";
 import { generateReceiptPdf } from "@/lib/receipt";
 import { useRealtime } from "@/lib/use-realtime";
+import { ReturnLoanDialog } from "@/components/ReturnLoanDialog";
 
 export const Route = createFileRoute("/_authenticated/loans")({
   head: () => ({ meta: [{ title: "Empréstimos — Biblioteca" }] }),
