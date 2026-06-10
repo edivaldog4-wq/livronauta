@@ -23,6 +23,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
   const [shelf, setShelf] = useState<string>("none");
   const [newShelf, setNewShelf] = useState("");
   const [loading, setLoading] = useState(false);
+  const [progress, setProgress] = useState<{ current: number; total: number; phase: string } | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
   const { data: shelves = [] } = useQuery({
     queryKey: ["shelves"],
@@ -34,13 +36,13 @@ export function CsvImportDialog({ open, onClose }: Props) {
     queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
   });
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
+  const processFile = async (f: File) => {
+    setProgress({ current: 0, total: 0, phase: "Lendo arquivo..." });
     const text = await f.text();
     const parsed = parseLibibCsv(text);
-    if (!parsed.length) return toast.error("Nenhuma linha válida encontrada");
+    if (!parsed.length) { setProgress(null); return toast.error("Nenhuma linha válida encontrada"); }
 
+    setProgress({ current: 0, total: parsed.length, phase: "Verificando duplicatas..." });
     const candidates = parsed.map(rowToBook);
     const isbns = candidates.map((c) => c.isbn).filter(Boolean) as string[];
     const titles = candidates.map((c) => c.titulo.toLowerCase());
@@ -62,7 +64,19 @@ export function CsvImportDialog({ open, onClose }: Props) {
       const dup = dupBy(c);
       return { ...c, dup, resolution: dup ? "skip" : "import", selected: true };
     }));
+    setProgress(null);
     toast.success(`${candidates.length} linhas carregadas`);
+  };
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (f) await processFile(f);
+  };
+
+  const onDrop = async (e: React.DragEvent) => {
+    e.preventDefault(); setDragOver(false);
+    const f = e.dataTransfer.files?.[0];
+    if (f && /\.csv$/i.test(f.name)) await processFile(f);
+    else toast.error("Solte um arquivo .csv");
   };
 
   const setRow = (i: number, patch: Partial<Row>) =>
@@ -70,6 +84,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
   const handleImport = async () => {
     setLoading(true);
+    const work = rows.filter((r) => r.selected && r.resolution !== "skip");
+    setProgress({ current: 0, total: work.length, phase: "Preparando..." });
     try {
       let shelfName: string | null = null;
       if (newShelf.trim()) {
@@ -81,8 +97,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
         shelfName = shelf;
       }
 
-      // resolve categories - create missing
-      const neededCats = Array.from(new Set(rows.filter((r) => r.selected && r.resolution !== "skip" && r.categoria_nome).map((r) => r.categoria_nome!)));
+      setProgress({ current: 0, total: work.length, phase: "Resolvendo categorias..." });
+      const neededCats = Array.from(new Set(work.filter((r) => r.categoria_nome).map((r) => r.categoria_nome!)));
       const catMap = new Map<string, string>();
       (categories as any[]).forEach((c) => catMap.set(c.nome.toLowerCase(), c.id));
       for (const name of neededCats) {
@@ -92,19 +108,14 @@ export function CsvImportDialog({ open, onClose }: Props) {
         }
       }
 
-      let imported = 0, updated = 0, skipped = 0;
-      for (const r of rows) {
-        if (!r.selected || r.resolution === "skip") { skipped++; continue; }
+      let imported = 0, updated = 0, skipped = rows.length - work.length, done = 0;
+      for (const r of work) {
+        done++;
+        setProgress({ current: done, total: work.length, phase: `Importando ${done} de ${work.length}: ${r.titulo.slice(0, 40)}` });
         const payload: any = {
-          titulo: r.titulo,
-          autor: r.autor,
-          isbn: r.isbn,
-          editora: r.editora,
-          ano: r.ano,
-          numero_paginas: r.numero_paginas,
-          sinopse: r.sinopse,
-          quantidade_total: r.quantidade_total,
-          localizacao_prateleira: shelfName,
+          titulo: r.titulo, autor: r.autor, isbn: r.isbn, editora: r.editora,
+          ano: r.ano, numero_paginas: r.numero_paginas, sinopse: r.sinopse,
+          quantidade_total: r.quantidade_total, localizacao_prateleira: shelfName,
           categoria_id: r.categoria_nome ? catMap.get(r.categoria_nome.toLowerCase()) ?? null : null,
         };
         if (r.resolution === "overwrite" && r.dup) {
@@ -118,13 +129,14 @@ export function CsvImportDialog({ open, onClose }: Props) {
       }
       toast.success(`Importação concluída: ${imported} adicionados, ${updated} atualizados, ${skipped} ignorados`);
       qc.invalidateQueries({ queryKey: ["books-admin"] });
-      qc.invalidateQueries({ queryKey: ["books"] });
+      qc.invalidateQueries({ queryKey: ["books-catalog"] });
       setRows([]);
       onClose();
     } catch (e: any) {
       toast.error(e.message);
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -138,13 +150,20 @@ export function CsvImportDialog({ open, onClose }: Props) {
           <DialogTitle>Importar acervo (CSV no formato Libib)</DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={onDrop}
+          className={`rounded-lg border-2 border-dashed p-4 text-center transition ${dragOver ? "border-primary bg-primary/5" : "border-muted-foreground/30"}`}
+        >
+          <p className="text-sm font-medium">Arraste e solte um arquivo CSV aqui</p>
+          <p className="text-xs text-muted-foreground mb-2">ou selecione manualmente abaixo</p>
+          <Input type="file" accept=".csv,text/csv" onChange={handleFile} className="max-w-sm mx-auto" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className="space-y-1">
-            <Label>Arquivo .csv</Label>
-            <Input type="file" accept=".csv,text/csv" onChange={handleFile} />
-          </div>
-          <div className="space-y-1">
-            <Label>Estante existente</Label>
+            <Label>Estante existente (aplicada aos livros importados)</Label>
             <Select value={shelf} onValueChange={setShelf}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -154,10 +173,25 @@ export function CsvImportDialog({ open, onClose }: Props) {
             </Select>
           </div>
           <div className="space-y-1">
-            <Label>...ou nova estante</Label>
+            <Label>...ou criar nova estante</Label>
             <Input placeholder="Ex.: Crítica Literária" value={newShelf} onChange={(e) => setNewShelf(e.target.value)} />
           </div>
         </div>
+
+        {progress && (
+          <div className="space-y-1">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{progress.phase}</span>
+              {progress.total > 0 && <span>{progress.current} / {progress.total}</span>}
+            </div>
+            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all"
+                style={{ width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : "100%" }}
+              />
+            </div>
+          </div>
+        )}
 
         {rows.length > 0 && (
           <>

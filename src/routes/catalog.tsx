@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,8 @@ export const Route = createFileRoute("/catalog")({
   component: CatalogPage,
 });
 
+const PAGE_SIZE = 24;
+
 function CatalogPage() {
   const { user, isStaff } = useAuth();
   const qc = useQueryClient();
@@ -28,26 +30,57 @@ function CatalogPage() {
   const [search, setSearch] = useState("");
   const [categoryId, setCategoryId] = useState<string>("all");
   const [availability, setAvailability] = useState<string>("all");
+  const [shelf, setShelf] = useState<string>("all");
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
   });
 
-  const { data: books = [], isLoading } = useQuery({
-    queryKey: ["books", search, categoryId, availability],
-    queryFn: async () => {
-      let q = supabase.from("books").select("*, categories(nome)").order("titulo");
+  const { data: shelves = [] } = useQuery({
+    queryKey: ["shelves"],
+    queryFn: async () => (await supabase.from("shelves").select("*").order("nome")).data ?? [],
+  });
+
+  const {
+    data: pages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+  } = useInfiniteQuery({
+    queryKey: ["books-catalog", search, categoryId, availability, shelf],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      const from = (pageParam as number) * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      let q = supabase.from("books").select("*, categories(nome)").order("titulo").range(from, to);
       if (search.trim()) q = q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`);
       if (categoryId !== "all") q = q.eq("categoria_id", categoryId);
       if (availability === "available") q = q.gt("quantidade_disponivel", 0);
       if (availability === "unavailable") q = q.eq("quantidade_disponivel", 0);
+      if (shelf !== "all") q = q.eq("localizacao_prateleira", shelf);
       const { data } = await q;
-      return data ?? [];
+      return { rows: data ?? [], next: (data?.length ?? 0) === PAGE_SIZE ? (pageParam as number) + 1 : null };
     },
+    getNextPageParam: (last) => last.next,
   });
+
+  const books = useMemo(() => (pages?.pages ?? []).flatMap((p) => p.rows), [pages]);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage();
+    }, { rootMargin: "400px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
 
   // Active loans of current user — to know which cards show "Devolver"
   const { data: myActiveLoans = [] } = useQuery({
@@ -93,7 +126,7 @@ function CatalogPage() {
   })();
 
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["books-catalog"] });
     qc.invalidateQueries({ queryKey: ["all-books-stats"] });
     qc.invalidateQueries({ queryKey: ["my-active-loans"] });
     qc.invalidateQueries({ queryKey: ["all-active-loans"] });
@@ -129,7 +162,7 @@ function CatalogPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">{libraryName}</h1>
-          <p className="text-muted-foreground text-sm">{books.length} {books.length === 1 ? "livro encontrado" : "livros encontrados"}</p>
+          <p className="text-muted-foreground text-sm">{books.length}{hasNextPage ? "+" : ""} {books.length === 1 ? "livro" : "livros"} carregado{books.length === 1 ? "" : "s"}</p>
         </div>
         {!user && (
           <Button asChild><Link to="/auth"><LogIn className="h-4 w-4 mr-2" />Entrar</Link></Button>
@@ -162,26 +195,45 @@ function CatalogPage() {
       )}
 
       <Card>
-        <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div className="relative md:col-span-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <CardContent className="pt-6 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="relative md:col-span-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <Select value={categoryId} onValueChange={setCategoryId}>
+              <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {categories.map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>))}
+              </SelectContent>
+            </Select>
+            <Select value={availability} onValueChange={setAvailability}>
+              <SelectTrigger><SelectValue placeholder="Disponibilidade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="available">Disponíveis</SelectItem>
+                <SelectItem value="unavailable">Emprestados</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Select value={categoryId} onValueChange={setCategoryId}>
-            <SelectTrigger><SelectValue placeholder="Categoria" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as categorias</SelectItem>
-              {categories.map((c: any) => (<SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>))}
-            </SelectContent>
-          </Select>
-          <Select value={availability} onValueChange={setAvailability}>
-            <SelectTrigger><SelectValue placeholder="Disponibilidade" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="available">Disponíveis</SelectItem>
-              <SelectItem value="unavailable">Emprestados</SelectItem>
-            </SelectContent>
-          </Select>
+          {shelves.length > 0 && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShelf("all")}
+                className={`text-xs px-3 py-1 rounded-full border transition ${shelf === "all" ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted"}`}
+              >Todas as estantes</button>
+              {shelves.map((s: any) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setShelf(s.nome === shelf ? "all" : s.nome)}
+                  className={`text-xs px-3 py-1 rounded-full border transition ${shelf === s.nome ? "bg-primary text-primary-foreground border-primary" : "bg-card hover:bg-muted"}`}
+                >{s.nome}</button>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -241,6 +293,9 @@ function CatalogPage() {
           })}
         </div>
       )}
+      <div ref={sentinelRef} className="h-10 flex items-center justify-center text-xs text-muted-foreground">
+        {isFetchingNextPage ? "Carregando mais..." : hasNextPage ? "Role para carregar mais" : books.length > 0 ? "Fim do acervo" : ""}
+      </div>
     </div>
   );
 

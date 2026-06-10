@@ -15,6 +15,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
+import { ReturnLoanDialog } from "@/components/ReturnLoanDialog";
+import { useRealtime } from "@/lib/use-realtime";
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Meu Perfil — Biblioteca" }] }),
@@ -29,8 +31,10 @@ function ProfilePage() {
   const [endereco, setEndereco] = useState("");
   const [reqOpen, setReqOpen] = useState(false);
   const [reqBookId, setReqBookId] = useState("");
+  const [returnTarget, setReturnTarget] = useState<any | null>(null);
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
+  useRealtime(["loans", "loan_requests"], [["my-loans"], ["my-requests"], ["available-books"]]);
 
   const { data: profile } = useQuery({
     queryKey: ["my-profile", user?.id],
@@ -100,12 +104,13 @@ function ProfilePage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
-  const handleReturn = async (loanId: string) => {
-    if (!confirm("Confirmar devolução deste livro?")) return;
+  const confirmReturn = async (payload: { observacao?: string; condicao?: string }) => {
+    if (!returnTarget) return;
     try {
-      const r = await retLoan({ data: { loan_id: loanId } });
+      const r = await retLoan({ data: { loan_id: returnTarget.id, ...payload } });
       if (r.multa > 0) toast.warning(`Devolução registrada. Multa: R$ ${r.multa.toFixed(2)}`);
       else toast.success("Devolução registrada");
+      setReturnTarget(null);
       invalidateAll();
     } catch (e: any) { toast.error(e.message); }
   };
@@ -224,7 +229,7 @@ function ProfilePage() {
                       <TableCell className="text-sm">{Number(l.multa ?? 0) > 0 ? `R$ ${Number(l.multa).toFixed(2)}` : "—"}</TableCell>
                       <TableCell className="text-right">
                         {l.status === "ativo" && (
-                          <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>
+                          <Button size="sm" variant="outline" onClick={() => setReturnTarget(l)}>
                             <RotateCcw className="h-3 w-3 mr-1" />Devolver
                           </Button>
                         )}
@@ -263,6 +268,8 @@ function ProfilePage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReturnLoanDialog open={!!returnTarget} loan={returnTarget} onClose={() => setReturnTarget(null)} onConfirm={confirmReturn} />
     </div>
   );
 }

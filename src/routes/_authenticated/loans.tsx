@@ -18,6 +18,7 @@ import { createLoan, returnLoan, updateLoanDueDate } from "@/lib/loans.functions
 import { useLibraryName } from "@/lib/library";
 import { generateReceiptPdf } from "@/lib/receipt";
 import { useRealtime } from "@/lib/use-realtime";
+import { ReturnLoanDialog } from "@/components/ReturnLoanDialog";
 
 export const Route = createFileRoute("/_authenticated/loans")({
   head: () => ({ meta: [{ title: "Empréstimos — Biblioteca" }] }),
@@ -34,6 +35,7 @@ function LoansPage() {
   const [receipt, setReceipt] = useState<any | null>(null);
   const [editLoan, setEditLoan] = useState<any | null>(null);
   const [editDate, setEditDate] = useState("");
+  const [returnTarget, setReturnTarget] = useState<any | null>(null);
   const create = useServerFn(createLoan);
   const ret = useServerFn(returnLoan);
   const updateDue = useServerFn(updateLoanDueDate);
@@ -118,12 +120,15 @@ function LoansPage() {
     }
   };
 
-  const handleReturn = async (loanId: string) => {
-    if (!confirm("Confirmar devolução?")) return;
+  const openReturn = (loan: any) => setReturnTarget(loan);
+
+  const confirmReturn = async (payload: { observacao?: string; condicao?: string }) => {
+    if (!returnTarget) return;
     try {
-      const r = await ret({ data: { loan_id: loanId } });
+      const r = await ret({ data: { loan_id: returnTarget.id, ...payload } });
       if (r.multa > 0) toast.warning(`Devolução registrada. Multa: R$ ${r.multa.toFixed(2)}`);
       else toast.success("Devolução registrada");
+      setReturnTarget(null);
       invalidateAll();
     } catch (e: any) {
       toast.error(e.message);
@@ -214,7 +219,7 @@ function LoansPage() {
                       {l.status === "ativo" && (
                         <>
                           <Button size="sm" variant="ghost" onClick={() => openEditDate(l)} title="Editar data de devolução"><CalendarClock className="h-3 w-3" /></Button>
-                          <Button size="sm" variant="outline" onClick={() => handleReturn(l.id)}>Devolver</Button>
+                          <Button size="sm" variant="outline" onClick={() => openReturn(l)}>Devolver</Button>
                         </>
                       )}
                     </TableCell>
@@ -303,6 +308,8 @@ function LoansPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ReturnLoanDialog open={!!returnTarget} loan={returnTarget} onClose={() => setReturnTarget(null)} onConfirm={confirmReturn} />
     </div>
   );
 }

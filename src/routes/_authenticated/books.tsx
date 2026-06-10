@@ -1,15 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -17,7 +18,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { fetchBookByIsbn } from "@/lib/openlibrary.functions";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { CsvImportDialog } from "@/components/CsvImportDialog";
-import { booksToLibibCsv, downloadText } from "@/lib/libib-csv";
+import { ExportCsvDialog } from "@/components/ExportCsvDialog";
+import { BulkEditDialog } from "@/components/BulkEditDialog";
+import { useResizableColumns, Resizer } from "@/lib/use-resizable-columns";
+import { suggestTitle, suggestAuthor } from "@/lib/text-suggest";
 
 export const Route = createFileRoute("/_authenticated/books")({
   head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
@@ -36,6 +40,10 @@ const emptyForm: BookForm = {
   idioma: "", sinopse: "", capa_url: "", quantidade_total: "1", localizacao_prateleira: "", categoria_id: "",
 };
 
+const COL_DEFAULTS = {
+  select: 36, capa: 64, titulo: 240, autor: 180, categoria: 140, prateleira: 140, qtd: 110, acoes: 110,
+};
+
 function BooksPage() {
   const { isStaff } = useAuth();
   const qc = useQueryClient();
@@ -45,7 +53,11 @@ function BooksPage() {
   const [isbnLoading, setIsbnLoading] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const importIsbn = useServerFn(fetchBookByIsbn);
+  const { widths, startResize, reset: resetCols } = useResizableColumns("books-cols-v1", COL_DEFAULTS);
 
   const { data: books = [] } = useQuery({
     queryKey: ["books-admin", search],
@@ -67,6 +79,9 @@ function BooksPage() {
     queryKey: ["shelves"],
     queryFn: async () => (await supabase.from("shelves").select("*").order("nome")).data ?? [],
   });
+
+  const titleSuggest = useMemo(() => suggestTitle(form.titulo || ""), [form.titulo]);
+  const authorSuggest = useMemo(() => suggestAuthor(form.autor || ""), [form.autor]);
 
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
@@ -144,7 +159,7 @@ function BooksPage() {
     }
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["books-admin"] });
-    qc.invalidateQueries({ queryKey: ["books"] });
+    qc.invalidateQueries({ queryKey: ["books-catalog"] });
   };
 
   const handleDelete = async (id: string) => {
@@ -155,12 +170,35 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
-  const exportCsv = async () => {
-    const { data } = await supabase.from("books").select("*, categories(nome)").order("titulo");
-    if (!data?.length) return toast.error("Nenhum livro para exportar");
-    downloadText(`library_${new Date().toISOString().slice(0,10).replace(/-/g,"")}.csv`, booksToLibibCsv(data));
-    toast.success(`${data.length} livros exportados`);
+  const toggleSelect = (id: string) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
   };
+  const toggleAll = () => {
+    if (selected.size === books.length) setSelected(new Set());
+    else setSelected(new Set(books.map((b: any) => b.id)));
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Excluir ${selected.size} livro(s)?`)) return;
+    const { error } = await supabase.from("books").delete().in("id", Array.from(selected));
+    if (error) return toast.error(error.message);
+    toast.success(`${selected.size} livro(s) excluído(s)`);
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
+  };
+
+  const headerCell = (key: keyof typeof COL_DEFAULTS, label: string, extra: string = "") => (
+    <TableHead
+      style={{ width: widths[key], minWidth: widths[key] }}
+      className={`relative ${extra}`}
+    >
+      {label}
+      <Resizer onMouseDown={startResize(key)} />
+    </TableHead>
+  );
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4">
@@ -171,35 +209,52 @@ function BooksPage() {
         </div>
         <div className="flex gap-2 flex-wrap">
           <Button variant="outline" onClick={() => setCsvOpen(true)}><Upload className="h-4 w-4 mr-2" />Importar CSV</Button>
-          <Button variant="outline" onClick={exportCsv}><FileDown className="h-4 w-4 mr-2" />Exportar CSV</Button>
+          <Button variant="outline" onClick={() => setExportOpen(true)}><FileDown className="h-4 w-4 mr-2" />Exportar CSV</Button>
           <Button onClick={openNew}><Plus className="h-4 w-4 mr-2" />Novo Livro</Button>
         </div>
       </div>
 
       <Card>
         <CardContent className="pt-6">
-          <div className="relative mb-4">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9 max-w-md" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9 max-w-md" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {selected.size > 0 && (
+                <>
+                  <span className="text-sm text-muted-foreground">{selected.size} selecionado(s)</span>
+                  <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}><Wand2 className="h-3 w-3 mr-1" />Editar em massa</Button>
+                  <Button size="sm" variant="outline" onClick={bulkDelete}><Trash2 className="h-3 w-3 mr-1" />Excluir</Button>
+                </>
+              )}
+              <Button size="sm" variant="ghost" onClick={resetCols} title="Restaurar larguras das colunas">Reset colunas</Button>
+            </div>
           </div>
           <div className="overflow-x-auto">
-            <Table>
+            <Table style={{ tableLayout: "fixed" }}>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-14">Capa</TableHead>
-                  <TableHead>Título</TableHead>
-                  <TableHead>Autor</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Prateleira</TableHead>
-                  <TableHead className="text-center">Disp. / Total</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead style={{ width: widths.select, minWidth: widths.select }} className="relative">
+                    <Checkbox checked={books.length > 0 && selected.size === books.length} onCheckedChange={toggleAll} />
+                    <Resizer onMouseDown={startResize("select")} />
+                  </TableHead>
+                  {headerCell("capa", "Capa")}
+                  {headerCell("titulo", "Título")}
+                  {headerCell("autor", "Autor")}
+                  {headerCell("categoria", "Categoria")}
+                  {headerCell("prateleira", "Prateleira")}
+                  {headerCell("qtd", "Disp./Total", "text-center")}
+                  {headerCell("acoes", "Ações", "text-right")}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {books.length === 0 ? (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
                 ) : books.map((b: any) => (
-                  <TableRow key={b.id}>
+                  <TableRow key={b.id} data-state={selected.has(b.id) ? "selected" : undefined}>
+                    <TableCell><Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleSelect(b.id)} /></TableCell>
                     <TableCell>
                       {b.capa_url ? (
                         <img src={b.capa_url} alt={b.titulo} className="h-12 w-9 object-cover rounded shadow-sm" loading="lazy" />
@@ -209,12 +264,12 @@ function BooksPage() {
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">{b.titulo}</TableCell>
-                    <TableCell>{b.autor}</TableCell>
-                    <TableCell className="text-muted-foreground">{b.categories?.nome ?? "—"}</TableCell>
-                    <TableCell>{b.localizacao_prateleira ?? "—"}</TableCell>
+                    <TableCell className="font-medium truncate" title={b.titulo}>{b.titulo}</TableCell>
+                    <TableCell className="truncate" title={b.autor}>{b.autor}</TableCell>
+                    <TableCell className="text-muted-foreground truncate">{b.categories?.nome ?? "—"}</TableCell>
+                    <TableCell className="truncate">{b.localizacao_prateleira ?? "—"}</TableCell>
                     <TableCell className="text-center">{b.quantidade_disponivel}/{b.quantidade_total}</TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right whitespace-nowrap">
                       <Button variant="ghost" size="icon" onClick={() => openEdit(b)}><Pencil className="h-4 w-4" /></Button>
                       <Button variant="ghost" size="icon" onClick={() => handleDelete(b.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </TableCell>
@@ -242,8 +297,26 @@ function BooksPage() {
                 <ScanLine className="h-4 w-4 mr-2" />Escanear
               </Button>
             </div>
-            <div className="md:col-span-2 space-y-1"><Label>Título *</Label><Input value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Autor</Label><Input value={form.autor} onChange={(e) => setForm({ ...form, autor: e.target.value })} /></div>
+            <div className="md:col-span-2 space-y-1">
+              <Label>Título *</Label>
+              <Input lang="pt-BR" spellCheck value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} />
+              {titleSuggest && (
+                <button type="button" onClick={() => setForm({ ...form, titulo: titleSuggest })}
+                  className="text-xs inline-flex items-center gap-1 text-primary hover:underline">
+                  <Sparkles className="h-3 w-3" />Sugestão: <strong>{titleSuggest}</strong> (clique para aplicar)
+                </button>
+              )}
+            </div>
+            <div className="space-y-1">
+              <Label>Autor</Label>
+              <Input lang="pt-BR" spellCheck value={form.autor} onChange={(e) => setForm({ ...form, autor: e.target.value })} />
+              {authorSuggest && (
+                <button type="button" onClick={() => setForm({ ...form, autor: authorSuggest })}
+                  className="text-xs inline-flex items-center gap-1 text-primary hover:underline">
+                  <Sparkles className="h-3 w-3" />Sugestão: <strong>{authorSuggest}</strong>
+                </button>
+              )}
+            </div>
             <div className="space-y-1"><Label>Editora</Label><Input value={form.editora} onChange={(e) => setForm({ ...form, editora: e.target.value })} /></div>
             <div className="space-y-1"><Label>Ano</Label><Input type="number" value={form.ano} onChange={(e) => setForm({ ...form, ano: e.target.value })} /></div>
             <div className="space-y-1"><Label>Páginas</Label><Input type="number" value={form.numero_paginas} onChange={(e) => setForm({ ...form, numero_paginas: e.target.value })} /></div>
@@ -270,7 +343,7 @@ function BooksPage() {
               </Select>
             </div>
             <div className="md:col-span-2 space-y-1"><Label>URL da Capa</Label><Input value={form.capa_url} onChange={(e) => setForm({ ...form, capa_url: e.target.value })} /></div>
-            <div className="md:col-span-2 space-y-1"><Label>Sinopse</Label><Textarea rows={3} value={form.sinopse} onChange={(e) => setForm({ ...form, sinopse: e.target.value })} /></div>
+            <div className="md:col-span-2 space-y-1"><Label>Sinopse</Label><Textarea lang="pt-BR" spellCheck rows={3} value={form.sinopse} onChange={(e) => setForm({ ...form, sinopse: e.target.value })} /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -281,6 +354,8 @@ function BooksPage() {
 
       <BarcodeScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onResult={onScanned} />
       <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} />
+      <ExportCsvDialog open={exportOpen} onClose={() => setExportOpen(false)} />
+      <BulkEditDialog open={bulkOpen} onClose={() => { setBulkOpen(false); setSelected(new Set()); }} bookIds={Array.from(selected)} />
     </div>
   );
 }
