@@ -23,6 +23,25 @@ export type LibibBookCandidate = {
   categoria_nome: string | null;
 };
 
+export function normalizeIsbn(value: string | null | undefined): string {
+  return String(value ?? "").replace(/\D/g, "");
+}
+
+export function normalizeBookText(value: string | null | undefined): string {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+export function bookDedupKey(book: Pick<LibibBookCandidate, "titulo" | "autor" | "isbn">): string {
+  const isbn = normalizeIsbn(book.isbn);
+  if (isbn) return `isbn:${isbn}`;
+  return `title:${normalizeBookText(book.titulo)}|author:${normalizeBookText(book.autor)}`;
+}
+
 export function rowToBook(r: LibibRow): LibibBookCandidate {
   const autor = (r.creators || `${r.first_name || ""} ${r.last_name || ""}`).trim();
   const year = r.publish_date?.match(/\d{4}/)?.[0];
