@@ -365,7 +365,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_books_batch: { Args: { _items: Json }; Returns: Json }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      normalize_book_text: { Args: { _value: string }; Returns: string }
       reject_loan_request: { Args: { _request_id: string }; Returns: boolean }
       request_loan: {
         Args: { _book_id: string; _observacao?: string }

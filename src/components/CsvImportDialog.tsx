@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { parseLibibCsv, rowToBook, type LibibBookCandidate } from "@/lib/libib-csv";
+import { bookDedupKey, normalizeBookText, normalizeIsbn, parseLibibCsv, rowToBook, type LibibBookCandidate } from "@/lib/libib-csv";
 
-type Resolution = "skip" | "import" | "overwrite";
+type Resolution = "skip" | "import" | "overwrite" | "merge";
 type Row = LibibBookCandidate & { dup: any | null; resolution: Resolution; selected: boolean };
 
 interface Props { open: boolean; onClose: () => void }
@@ -31,11 +31,6 @@ export function CsvImportDialog({ open, onClose }: Props) {
     queryFn: async () => (await supabase.from("shelves").select("*").order("nome")).data ?? [],
   });
 
-  const { data: categories = [] } = useQuery({
-    queryKey: ["categories"],
-    queryFn: async () => (await supabase.from("categories").select("*").order("nome")).data ?? [],
-  });
-
   const processFile = async (f: File) => {
     setProgress({ current: 0, total: 0, phase: "Lendo arquivo..." });
     const text = await f.text();
@@ -44,20 +39,21 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
     setProgress({ current: 0, total: parsed.length, phase: "Verificando duplicatas..." });
     const candidates = parsed.map(rowToBook);
-    const isbns = candidates.map((c) => c.isbn).filter(Boolean) as string[];
-    const titles = candidates.map((c) => c.titulo.toLowerCase());
 
-    const { data: existing } = await supabase
-      .from("books")
-      .select("id, titulo, autor, isbn")
-      .or(`isbn.in.(${isbns.length ? isbns.map((i) => `"${i}"`).join(",") : '""'}),titulo.in.(${titles.map((t) => `"${t.replace(/"/g, "")}"`).join(",")})`);
+    const { data: existing } = await supabase.from("books").select("id, titulo, autor, isbn").limit(10000);
+    const existingByKey = new Map<string, any>();
+    (existing ?? []).forEach((b: any) => {
+      const isbnKey = normalizeIsbn(b.isbn);
+      if (isbnKey) existingByKey.set(`isbn:${isbnKey}`, b);
+      existingByKey.set(`title:${normalizeBookText(b.titulo)}|author:${normalizeBookText(b.autor)}`, b);
+    });
+    const seenInFile = new Map<string, LibibBookCandidate>();
 
     const dupBy = (c: LibibBookCandidate) => {
-      const list = existing ?? [];
-      return list.find((b) =>
-        (c.isbn && b.isbn && b.isbn === c.isbn) ||
-        (b.titulo?.toLowerCase() === c.titulo.toLowerCase() && (b.autor ?? "").toLowerCase() === (c.autor ?? "").toLowerCase()),
-      ) ?? null;
+      const key = bookDedupKey(c);
+      const dup = existingByKey.get(key) ?? (seenInFile.has(key) ? { id: `arquivo-${key}`, titulo: seenInFile.get(key)?.titulo, autor: seenInFile.get(key)?.autor, isbn: seenInFile.get(key)?.isbn } : null);
+      if (!seenInFile.has(key)) seenInFile.set(key, c);
+      return dup;
     };
 
     setRows(candidates.map((c) => {
@@ -97,39 +93,20 @@ export function CsvImportDialog({ open, onClose }: Props) {
         shelfName = shelf;
       }
 
-      setProgress({ current: 0, total: work.length, phase: "Resolvendo categorias..." });
-      const neededCats = Array.from(new Set(work.filter((r) => r.categoria_nome).map((r) => r.categoria_nome!)));
-      const catMap = new Map<string, string>();
-      (categories as any[]).forEach((c) => catMap.set(c.nome.toLowerCase(), c.id));
-      for (const name of neededCats) {
-        if (!catMap.has(name.toLowerCase())) {
-          const { data } = await supabase.from("categories").insert({ nome: name }).select().single();
-          if (data) catMap.set(name.toLowerCase(), data.id);
-        }
-      }
-
-      let imported = 0, updated = 0, skipped = rows.length - work.length, done = 0;
-      for (const r of work) {
-        done++;
-        setProgress({ current: done, total: work.length, phase: `Importando ${done} de ${work.length}: ${r.titulo.slice(0, 40)}` });
-        const payload: any = {
-          titulo: r.titulo, autor: r.autor, isbn: r.isbn, editora: r.editora,
-          ano: r.ano, numero_paginas: r.numero_paginas, sinopse: r.sinopse,
-          quantidade_total: r.quantidade_total, localizacao_prateleira: shelfName,
-          categoria_id: r.categoria_nome ? catMap.get(r.categoria_nome.toLowerCase()) ?? null : null,
-        };
-        if (r.resolution === "overwrite" && r.dup) {
-          const { error } = await supabase.from("books").update(payload).eq("id", r.dup.id);
-          if (!error) updated++;
-        } else {
-          payload.quantidade_disponivel = r.quantidade_total;
-          const { error } = await supabase.from("books").insert(payload);
-          if (!error) imported++;
-        }
-      }
-      toast.success(`Importação concluída: ${imported} adicionados, ${updated} atualizados, ${skipped} ignorados`);
+      setProgress({ current: work.length, total: work.length, phase: "Gravando lote com verificação de duplicatas..." });
+      const payload = work.map((r) => ({ ...r, localizacao_prateleira: shelfName, resolution: r.resolution }));
+      const { data, error } = await supabase.rpc("import_books_batch", { _items: payload as any });
+      if (error) throw new Error(error.message);
+      const result: any = data ?? {};
+      toast.success(`Importação concluída: ${result.imported ?? 0} adicionados, ${result.updated ?? 0} atualizados, ${result.merged ?? 0} somados, ${result.skipped ?? 0} ignorados`);
       qc.invalidateQueries({ queryKey: ["books-admin"] });
       qc.invalidateQueries({ queryKey: ["books-catalog"] });
+      qc.invalidateQueries({ queryKey: ["all-books-stats"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["loan-history"] });
+      qc.invalidateQueries({ queryKey: ["loans-global-history"] });
+      qc.invalidateQueries({ queryKey: ["categories"] });
+      qc.invalidateQueries({ queryKey: ["shelves"] });
       setRows([]);
       onClose();
     } catch (e: any) {
@@ -228,8 +205,9 @@ export function CsvImportDialog({ open, onClose }: Props) {
                             <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="skip">Ignorar (duplicata)</SelectItem>
-                              <SelectItem value="overwrite">Sobrescrever existente</SelectItem>
-                              <SelectItem value="import">Importar mesmo assim</SelectItem>
+                              <SelectItem value="overwrite">Atualizar dados sem somar</SelectItem>
+                              <SelectItem value="merge">Somar exemplares ao existente</SelectItem>
+                              <SelectItem value="import">Importar só se não existir</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : <Badge variant="secondary">Novo</Badge>}

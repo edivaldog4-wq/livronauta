@@ -1,17 +1,17 @@
-import { createFileRoute, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { BrandMark } from "@/components/BrandMark";
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Entrar — Biblioteca" }] }),
+  head: () => ({ meta: [{ title: "Entrar — Livronauta" }] }),
   component: AuthPage,
 });
 
@@ -57,13 +57,11 @@ function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/20 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,var(--accent),var(--background)_42%)] px-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-3">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <BookOpen className="h-7 w-7" />
-          </div>
-          <CardTitle className="text-2xl">Biblioteca</CardTitle>
+          <BrandMark className="mx-auto" />
+          <CardTitle className="text-2xl">Livronauta</CardTitle>
           <CardDescription>Sistema de Gestão de Acervo</CardDescription>
         </CardHeader>
         <CardContent>

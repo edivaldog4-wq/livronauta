@@ -2,11 +2,12 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
-  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { useLibraryName } from "@/lib/library";
+import { BrandMark } from "@/components/BrandMark";
 
 interface NavItem { title: string; url: string; icon: any; staff?: boolean; adminOnly?: boolean }
 
@@ -25,6 +26,8 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isStaff, isAdmin, user, signOut, roles } = useAuth();
   const libraryName = useLibraryName();
+  const { isMobile, setOpenMobile } = useSidebar();
+  const closeMobileMenu = () => { if (isMobile) setOpenMobile(false); };
 
   const visible = items.filter((i) => {
     if (i.adminOnly) return isAdmin;
@@ -38,9 +41,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/catalog" className="flex items-center gap-2 px-2 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <BookOpen className="h-5 w-5" />
-          </div>
+          <BrandMark compact className="bg-sidebar-primary text-sidebar-primary-foreground" />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-semibold text-sidebar-foreground truncate">{libraryName}</span>
             <span className="text-xs text-sidebar-foreground/60">Sistema de Gestão</span>
@@ -55,7 +56,7 @@ export function AppSidebar() {
               {visible.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={pathname === item.url} tooltip={item.title}>
-                    <Link to={item.url}>
+                    <Link to={item.url} onClick={closeMobileMenu}>
                       <item.icon className="h-4 w-4" />
                       <span>{item.title}</span>
                     </Link>

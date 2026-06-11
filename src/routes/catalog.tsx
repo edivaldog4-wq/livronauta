@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2, RotateCcw, Send } from "lucide-react";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2, RotateCcw, Send, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { AppLayout } from "@/components/AppLayout";
@@ -31,6 +34,7 @@ function CatalogPage() {
   const [categoryId, setCategoryId] = useState<string>("all");
   const [availability, setAvailability] = useState<string>("all");
   const [shelf, setShelf] = useState<string>("all");
+  const [editing, setEditing] = useState<any | null>(null);
   const reqLoan = useServerFn(requestLoan);
   const retLoan = useServerFn(returnLoan);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -155,6 +159,27 @@ function CatalogPage() {
       else toast.success("Devolução registrada");
       invalidateAll();
     } catch (e: any) { toast.error(e.message); }
+  };
+
+  const saveEditing = async () => {
+    if (!editing?.titulo?.trim()) return toast.error("Título obrigatório");
+    const { error } = await supabase.from("books").update({
+      titulo: editing.titulo.trim(),
+      autor: editing.autor?.trim() ?? "",
+      isbn: editing.isbn?.trim() || null,
+      editora: editing.editora?.trim() || null,
+      ano: editing.ano ? Number(editing.ano) : null,
+      numero_paginas: editing.numero_paginas ? Number(editing.numero_paginas) : null,
+      sinopse: editing.sinopse?.trim() || null,
+      localizacao_prateleira: editing.localizacao_prateleira || null,
+      categoria_id: editing.categoria_id || null,
+      quantidade_total: Math.max(1, Number(editing.quantidade_total) || 1),
+    }).eq("id", editing.id);
+    if (error) return toast.error(error.message);
+    toast.success("Livro atualizado");
+    setEditing(null);
+    invalidateAll();
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
   const content = (
@@ -285,6 +310,11 @@ function CatalogPage() {
                           <Send className="h-3 w-3 mr-1" />Solicitar
                         </Button>
                       ) : null}
+                      {isStaff && (
+                        <Button size="sm" variant="secondary" className="mt-2 w-full" onClick={() => setEditing({ ...b, ano: b.ano ?? "", numero_paginas: b.numero_paginas ?? "", quantidade_total: b.quantidade_total ?? 1 })}>
+                          <Pencil className="h-3 w-3 mr-1" />Editar dados
+                        </Button>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -296,6 +326,38 @@ function CatalogPage() {
       <div ref={sentinelRef} className="h-10 flex items-center justify-center text-xs text-muted-foreground">
         {isFetchingNextPage ? "Carregando mais..." : hasNextPage ? "Role para carregar mais" : books.length > 0 ? "Fim do acervo" : ""}
       </div>
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Editar livro</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="md:col-span-2 space-y-1"><Label>Título</Label><Input value={editing.titulo ?? ""} onChange={(e) => setEditing({ ...editing, titulo: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Autor</Label><Input value={editing.autor ?? ""} onChange={(e) => setEditing({ ...editing, autor: e.target.value })} /></div>
+              <div className="space-y-1"><Label>ISBN</Label><Input value={editing.isbn ?? ""} onChange={(e) => setEditing({ ...editing, isbn: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Editora</Label><Input value={editing.editora ?? ""} onChange={(e) => setEditing({ ...editing, editora: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Ano</Label><Input type="number" value={editing.ano ?? ""} onChange={(e) => setEditing({ ...editing, ano: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Páginas</Label><Input type="number" value={editing.numero_paginas ?? ""} onChange={(e) => setEditing({ ...editing, numero_paginas: e.target.value })} /></div>
+              <div className="space-y-1"><Label>Quantidade Total</Label><Input type="number" min={1} value={editing.quantidade_total ?? 1} onChange={(e) => setEditing({ ...editing, quantidade_total: e.target.value })} /></div>
+              <div className="space-y-1">
+                <Label>Categoria</Label>
+                <Select value={editing.categoria_id ?? "none"} onValueChange={(v) => setEditing({ ...editing, categoria_id: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="none">— Nenhuma —</SelectItem>{categories.map((c: any) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label>Estante / Prateleira</Label>
+                <Select value={editing.localizacao_prateleira ?? "none"} onValueChange={(v) => setEditing({ ...editing, localizacao_prateleira: v === "none" ? null : v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="none">— Nenhuma —</SelectItem>{shelves.map((s: any) => <SelectItem key={s.id} value={s.nome}>{s.nome}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div className="md:col-span-2 space-y-1"><Label>Sinopse</Label><Textarea rows={4} value={editing.sinopse ?? ""} onChange={(e) => setEditing({ ...editing, sinopse: e.target.value })} /></div>
+            </div>
+          )}
+          <DialogFooter><Button variant="outline" onClick={() => setEditing(null)}>Cancelar</Button><Button onClick={saveEditing}>Salvar</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
