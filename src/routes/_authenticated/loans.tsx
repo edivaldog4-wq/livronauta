@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Label } from "@/components/ui/label";
 import { Plus, Printer, CalendarClock } from "lucide-react";
 import { toast } from "sonner";
@@ -41,7 +41,7 @@ function LoansPage() {
   const updateDue = useServerFn(updateLoanDueDate);
 
   useRealtime(
-    ["loans", "loan_requests", "books"],
+    ["books"],
     [["loans"], ["available-books"], ["loans-global-history"], ["dashboard-stats"], ["pending-requests"], ["loan-history"], ["books-admin"], ["books"]],
   );
 
@@ -237,25 +237,35 @@ function LoansPage() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label>Livro disponível</Label>
-              <Select value={bookId} onValueChange={setBookId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o livro" /></SelectTrigger>
-                <SelectContent>
-                  {books.map((b: any) => (
-                    <SelectItem key={b.id} value={b.id}>{b.titulo} — {b.autor} ({b.quantidade_disponivel} disp.)</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={bookId}
+                onChange={setBookId}
+                placeholder="Selecione o livro"
+                searchPlaceholder="Buscar por título, autor ou ISBN…"
+                emptyText="Nenhum livro disponível"
+                options={books.map((b: any) => ({
+                  value: b.id,
+                  label: b.titulo,
+                  hint: `${b.autor ?? ""} · ${b.quantidade_disponivel} disp.`,
+                  keywords: `${b.autor ?? ""} ${b.isbn ?? ""}`,
+                }))}
+              />
             </div>
             <div className="space-y-1">
               <Label>Membro</Label>
-              <Select value={userId} onValueChange={setUserId}>
-                <SelectTrigger><SelectValue placeholder="Selecione o membro" /></SelectTrigger>
-                <SelectContent>
-                  {profiles.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{(p.nome || p.email)}{p.numero ? ` — Nº ${p.numero}` : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                value={userId}
+                onChange={setUserId}
+                placeholder="Selecione o membro"
+                searchPlaceholder="Buscar por nome, e-mail ou número…"
+                emptyText="Nenhum membro"
+                options={profiles.map((p: any) => ({
+                  value: p.id,
+                  label: p.nome || p.email,
+                  hint: p.numero ? `Nº ${p.numero}` : p.email,
+                  keywords: `${p.email ?? ""} ${p.numero ?? ""}`,
+                }))}
+              />
             </div>
             <p className="text-xs text-muted-foreground">Devolução prevista: 14 dias a partir de hoje. Você poderá ajustar a data depois.</p>
           </div>

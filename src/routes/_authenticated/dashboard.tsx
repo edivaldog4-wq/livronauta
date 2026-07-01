@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, RefreshCw, Users, AlertTriangle, Check, X, Inbox } from "lucide-react";
+import { BookOpen, RefreshCw, Users, AlertTriangle, Check, X, Inbox, History, ArrowRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth-context";
@@ -27,8 +28,8 @@ function DashboardPage() {
   const reject = useServerFn(rejectLoanRequest);
   const libraryName = useLibraryName();
   useRealtime(
-    ["loans", "loan_requests", "books"],
-    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"]],
+    ["books"],
+    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"], ["audit-recent"]],
   );
 
   const { data: stats } = useQuery({
@@ -101,6 +102,20 @@ function DashboardPage() {
         .select("*, books(titulo, autor), profiles(nome, email, numero)")
         .eq("status", "pendente")
         .order("created_at", { ascending: true });
+      return data ?? [];
+    },
+  });
+
+  const { data: recentAudit = [] } = useQuery({
+    queryKey: ["audit-recent"],
+    enabled: isStaff,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data } = await supabase.from("audit_log")
+        .select("id, created_at, actor_email, table_name, operation, summary")
+        .order("created_at", { ascending: false })
+        .limit(5);
       return data ?? [];
     },
   });
@@ -213,6 +228,36 @@ function DashboardPage() {
                     ))}
                   </TableBody>
                 </Table>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2"><History className="h-5 w-5" />Últimas modificações</CardTitle>
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/audit">Ver auditoria completa<ArrowRight className="h-3 w-3 ml-1" /></Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {recentAudit.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Sem registros ainda.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentAudit.map((a: any) => (
+                    <li key={a.id} className="py-2 flex items-start justify-between gap-3 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{a.summary ?? `${a.operation} em ${a.table_name}`}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {a.actor_email ?? "sistema"} · {new Date(a.created_at).toLocaleString("pt-BR")}
+                        </div>
+                      </div>
+                      <Badge variant={a.operation === "DELETE" ? "destructive" : a.operation === "UPDATE" ? "secondary" : "default"}>
+                        {a.operation === "INSERT" ? "Criação" : a.operation === "UPDATE" ? "Edição" : "Exclusão"}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
               )}
             </CardContent>
           </Card>
