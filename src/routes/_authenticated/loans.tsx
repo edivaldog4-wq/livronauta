@@ -41,7 +41,7 @@ function LoansPage() {
   const updateDue = useServerFn(updateLoanDueDate);
 
   useRealtime(
-    ["loans", "loan_requests", "books"],
+    ["books"],
     [["loans"], ["available-books"], ["loans-global-history"], ["dashboard-stats"], ["pending-requests"], ["loan-history"], ["books-admin"], ["books"]],
   );
 
