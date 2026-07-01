@@ -3,7 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { BookOpen, RefreshCw, Users, AlertTriangle, Check, X, Inbox } from "lucide-react";
+import { BookOpen, RefreshCw, Users, AlertTriangle, Check, X, Inbox, History, ArrowRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useAuth } from "@/lib/auth-context";
@@ -27,8 +28,8 @@ function DashboardPage() {
   const reject = useServerFn(rejectLoanRequest);
   const libraryName = useLibraryName();
   useRealtime(
-    ["loans", "loan_requests", "books"],
-    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"]],
+    ["books"],
+    [["dashboard-stats"], ["loan-history"], ["loans-global-history"], ["pending-requests"], ["audit-recent"]],
   );
 
   const { data: stats } = useQuery({
