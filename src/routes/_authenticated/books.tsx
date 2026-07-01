@@ -205,6 +205,18 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
+  const doMerge = async () => {
+    if (selected.size !== 2 || !mergeTargetId) return;
+    const ids = Array.from(selected);
+    const sourceId = ids.find((i) => i !== mergeTargetId)!;
+    const { error } = await supabase.rpc("merge_books", { _target_id: mergeTargetId, _source_id: sourceId });
+    if (error) return toast.error(error.message);
+    toast.success("Livros mesclados");
+    setMergeOpen(false);
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
+  };
+
   const headerCell = (key: keyof typeof COL_DEFAULTS, label: string, extra: string = "") => (
     <TableHead
       style={{ width: widths[key], minWidth: widths[key] }}
@@ -376,6 +388,37 @@ function BooksPage() {
       <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} />
       <ExportCsvDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <BulkEditDialog open={bulkOpen} onClose={() => { setBulkOpen(false); setSelected(new Set()); }} bookIds={Array.from(selected)} />
+
+      <Dialog open={mergeOpen} onOpenChange={setMergeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mesclar livros duplicados</DialogTitle>
+            <DialogDescription>
+              Escolha qual registro será mantido. As quantidades, empréstimos e etiquetas do outro serão transferidos, e o registro descartado será excluído.
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={mergeTargetId} onValueChange={setMergeTargetId} className="space-y-2">
+            {Array.from(selected).map((id) => {
+              const b = books.find((x: any) => x.id === id);
+              if (!b) return null;
+              return (
+                <label key={id} className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                  <RadioGroupItem value={id} className="mt-1" />
+                  <div className="flex-1 text-sm">
+                    <div className="font-medium">{b.titulo}</div>
+                    <div className="text-muted-foreground">{b.autor || "—"} · Disp/Total: {b.quantidade_disponivel}/{b.quantidade_total}</div>
+                    {b.isbn && <div className="text-xs text-muted-foreground">ISBN {b.isbn}</div>}
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMergeOpen(false)}>Cancelar</Button>
+            <Button onClick={doMerge} disabled={!mergeTargetId}>Mesclar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
