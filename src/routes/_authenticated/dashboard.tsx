@@ -233,6 +233,36 @@ function DashboardPage() {
           </Card>
 
           <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2"><History className="h-5 w-5" />Últimas modificações</CardTitle>
+              <Button asChild size="sm" variant="ghost">
+                <Link to="/audit">Ver auditoria completa<ArrowRight className="h-3 w-3 ml-1" /></Link>
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {recentAudit.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Sem registros ainda.</p>
+              ) : (
+                <ul className="divide-y">
+                  {recentAudit.map((a: any) => (
+                    <li key={a.id} className="py-2 flex items-start justify-between gap-3 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{a.summary ?? `${a.operation} em ${a.table_name}`}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {a.actor_email ?? "sistema"} · {new Date(a.created_at).toLocaleString("pt-BR")}
+                        </div>
+                      </div>
+                      <Badge variant={a.operation === "DELETE" ? "destructive" : a.operation === "UPDATE" ? "secondary" : "default"}>
+                        {a.operation === "INSERT" ? "Criação" : a.operation === "UPDATE" ? "Edição" : "Exclusão"}
+                      </Badge>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader><CardTitle>Empréstimos nos últimos 30 dias</CardTitle></CardHeader>
             <CardContent>
               <div className="h-64 w-full">
