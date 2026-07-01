@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut } from "lucide-react";
+import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -49,6 +49,24 @@ export function AppSidebar() {
         </Link>
       </SidebarHeader>
       <SidebarContent>
+        {isStaff && (
+          <div className="px-2 pt-2 group-data-[collapsible=icon]:px-1">
+            <Button
+              asChild
+              size="sm"
+              className="w-full justify-start gap-2 shadow-sm group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+            >
+              <Link
+                to="/books"
+                search={{ new: 1 } as any}
+                onClick={closeMobileMenu}
+              >
+                <PlusCircle className="h-4 w-4 shrink-0" />
+                <span className="font-semibold group-data-[collapsible=icon]:hidden">Novo livro</span>
+              </Link>
+            </Button>
+          </div>
+        )}
         <SidebarGroup>
           <SidebarGroupLabel className="sr-only">Menu</SidebarGroupLabel>
           <SidebarGroupContent>
