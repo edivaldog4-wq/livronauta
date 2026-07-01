@@ -231,7 +231,7 @@ function BooksPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="sticky top-0 z-20 -mx-6 px-6 py-3 mb-4 bg-card/95 backdrop-blur border-b border-border/60 flex items-center justify-between gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9 max-w-md" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -241,6 +241,11 @@ function BooksPage() {
                 <>
                   <span className="text-sm text-muted-foreground">{selected.size} selecionado(s)</span>
                   <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}><Wand2 className="h-3 w-3 mr-1" />Editar em massa</Button>
+                  {selected.size === 2 && (
+                    <Button size="sm" variant="outline" onClick={() => { setMergeTargetId(Array.from(selected)[0]); setMergeOpen(true); }}>
+                      <GitMerge className="h-3 w-3 mr-1" />Mesclar
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={bulkDelete}><Trash2 className="h-3 w-3 mr-1" />Excluir</Button>
                 </>
               )}
