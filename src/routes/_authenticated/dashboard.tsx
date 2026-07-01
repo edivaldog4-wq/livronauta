@@ -106,6 +106,20 @@ function DashboardPage() {
     },
   });
 
+  const { data: recentAudit = [] } = useQuery({
+    queryKey: ["audit-recent"],
+    enabled: isStaff,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    queryFn: async () => {
+      const { data } = await supabase.from("audit_log")
+        .select("id, created_at, actor_email, table_name, operation, summary")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      return data ?? [];
+    },
+  });
+
   const handleBootstrap = async () => {
     const r = await promote();
     if (r.promoted) {
