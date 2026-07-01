@@ -57,9 +57,22 @@ function BooksPage() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeTargetId, setMergeTargetId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const importIsbn = useServerFn(fetchBookByIsbn);
   const { widths, startResize, reset: resetCols } = useResizableColumns("books-cols-v1", COL_DEFAULTS);
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setForm(emptyForm);
+      setOpen(true);
+      navigate({ to: "/books", search: {} as any, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.new]);
 
   const { data: books = [] } = useQuery({
     queryKey: ["books-admin", search],
