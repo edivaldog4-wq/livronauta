@@ -1,16 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown, Sparkles, Wand2 } from "lucide-react";
+import { Pencil, Plus, Trash2, Search, Download, BookOpen, ScanLine, Upload, FileDown, Sparkles, Wand2, GitMerge } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -25,6 +26,7 @@ import { suggestTitle, suggestAuthor } from "@/lib/text-suggest";
 
 export const Route = createFileRoute("/_authenticated/books")({
   head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
+  validateSearch: (s: Record<string, unknown>) => ({ new: s.new ? 1 : undefined }) as { new?: 1 },
   component: BooksPage,
 });
 
@@ -55,9 +57,22 @@ function BooksPage() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [mergeOpen, setMergeOpen] = useState(false);
+  const [mergeTargetId, setMergeTargetId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const importIsbn = useServerFn(fetchBookByIsbn);
   const { widths, startResize, reset: resetCols } = useResizableColumns("books-cols-v1", COL_DEFAULTS);
+  const navigate = useNavigate();
+  const searchParams = Route.useSearch();
+
+  useEffect(() => {
+    if (searchParams.new) {
+      setForm(emptyForm);
+      setOpen(true);
+      navigate({ to: "/books", search: {} as any, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.new]);
 
   const { data: books = [] } = useQuery({
     queryKey: ["books-admin", search],
@@ -190,6 +205,18 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
+  const doMerge = async () => {
+    if (selected.size !== 2 || !mergeTargetId) return;
+    const ids = Array.from(selected);
+    const sourceId = ids.find((i) => i !== mergeTargetId)!;
+    const { error } = await supabase.rpc("merge_books", { _target_id: mergeTargetId, _source_id: sourceId });
+    if (error) return toast.error(error.message);
+    toast.success("Livros mesclados");
+    setMergeOpen(false);
+    setSelected(new Set());
+    qc.invalidateQueries({ queryKey: ["books-admin"] });
+  };
+
   const headerCell = (key: keyof typeof COL_DEFAULTS, label: string, extra: string = "") => (
     <TableHead
       style={{ width: widths[key], minWidth: widths[key] }}
@@ -216,7 +243,7 @@ function BooksPage() {
 
       <Card>
         <CardContent className="pt-6">
-          <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+          <div className="sticky top-0 z-20 -mx-6 px-6 py-3 mb-4 bg-card/95 backdrop-blur border-b border-border/60 flex items-center justify-between gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[220px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Buscar por título, autor ou ISBN" className="pl-9 max-w-md" value={search} onChange={(e) => setSearch(e.target.value)} />
@@ -226,6 +253,11 @@ function BooksPage() {
                 <>
                   <span className="text-sm text-muted-foreground">{selected.size} selecionado(s)</span>
                   <Button size="sm" variant="outline" onClick={() => setBulkOpen(true)}><Wand2 className="h-3 w-3 mr-1" />Editar em massa</Button>
+                  {selected.size === 2 && (
+                    <Button size="sm" variant="outline" onClick={() => { setMergeTargetId(Array.from(selected)[0]); setMergeOpen(true); }}>
+                      <GitMerge className="h-3 w-3 mr-1" />Mesclar
+                    </Button>
+                  )}
                   <Button size="sm" variant="outline" onClick={bulkDelete}><Trash2 className="h-3 w-3 mr-1" />Excluir</Button>
                 </>
               )}
@@ -356,6 +388,37 @@ function BooksPage() {
       <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} />
       <ExportCsvDialog open={exportOpen} onClose={() => setExportOpen(false)} />
       <BulkEditDialog open={bulkOpen} onClose={() => { setBulkOpen(false); setSelected(new Set()); }} bookIds={Array.from(selected)} />
+
+      <Dialog open={mergeOpen} onOpenChange={setMergeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mesclar livros duplicados</DialogTitle>
+            <DialogDescription>
+              Escolha qual registro será mantido. As quantidades, empréstimos e etiquetas do outro serão transferidos, e o registro descartado será excluído.
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={mergeTargetId} onValueChange={setMergeTargetId} className="space-y-2">
+            {Array.from(selected).map((id) => {
+              const b = books.find((x: any) => x.id === id);
+              if (!b) return null;
+              return (
+                <label key={id} className="flex items-start gap-3 rounded-md border p-3 cursor-pointer hover:bg-muted/50">
+                  <RadioGroupItem value={id} className="mt-1" />
+                  <div className="flex-1 text-sm">
+                    <div className="font-medium">{b.titulo}</div>
+                    <div className="text-muted-foreground">{b.autor || "—"} · Disp/Total: {b.quantidade_disponivel}/{b.quantidade_total}</div>
+                    {b.isbn && <div className="text-xs text-muted-foreground">ISBN {b.isbn}</div>}
+                  </div>
+                </label>
+              );
+            })}
+          </RadioGroup>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setMergeOpen(false)}>Cancelar</Button>
+            <Button onClick={doMerge} disabled={!mergeTargetId}>Mesclar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
