@@ -180,11 +180,12 @@ function ProfilePage() {
                   <TableHead>Solicitado em</TableHead>
                   <TableHead>Decidido em</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {myRequests.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Nenhuma solicitação</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhuma solicitação</TableCell></TableRow>
                 ) : myRequests.map((r: any) => {
                   const s = requestStatus[r.status] ?? { label: r.status, variant: "default" as const };
                   return (
@@ -193,6 +194,13 @@ function ProfilePage() {
                       <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell className="text-sm">{r.decided_at ? new Date(r.decided_at).toLocaleDateString("pt-BR") : "—"}</TableCell>
                       <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        {r.status === "pendente" && (
+                          <Button size="sm" variant="ghost" onClick={() => cancelRequest(r.id)}>
+                            <X className="h-4 w-4 mr-1" />Cancelar
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
