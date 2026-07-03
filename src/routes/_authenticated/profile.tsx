@@ -50,13 +50,30 @@ function ProfilePage() {
     queryFn: async () => (await supabase.from("loans").select("*, books(titulo, autor)").eq("user_id", user!.id).order("data_emprestimo", { ascending: false })).data ?? [],
   });
 
-  const { data: myRequests = [] } = useQuery({
+  const { data: myRequests = [], error: myRequestsError, refetch: refetchMyRequests } = useQuery({
     queryKey: ["my-requests", user?.id],
     enabled: !!user,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    queryFn: async () => (await supabase.from("loan_requests").select("*, books(titulo, autor)").eq("user_id", user!.id).order("created_at", { ascending: false })).data ?? [],
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loan_requests")
+        .select("id, status, created_at, decided_at, observacao, book_id, books:book_id(titulo, autor)")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
+
+  useEffect(() => {
+    if (myRequestsError) {
+      // eslint-disable-next-line no-console
+      console.error("[profile] falha ao carregar solicitações:", myRequestsError);
+      toast.error(`Erro ao carregar solicitações: ${myRequestsError.message}`);
+    }
+  }, [myRequestsError]);
 
   const { data: availableBooks = [] } = useQuery({
     queryKey: ["available-books"],
