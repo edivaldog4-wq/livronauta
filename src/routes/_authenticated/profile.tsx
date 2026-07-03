@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Send, RotateCcw, BookOpenCheck } from "lucide-react";
+import { Send, RotateCcw, BookOpenCheck, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -115,6 +115,14 @@ function ProfilePage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const cancelRequest = async (id: string) => {
+    if (!confirm("Cancelar esta solicitação?")) return;
+    const { error } = await supabase.rpc("cancel_loan_request", { _request_id: id });
+    if (error) return toast.error(error.message);
+    toast.success("Solicitação cancelada");
+    invalidateAll();
+  };
+
   const today = new Date().toISOString().slice(0, 10);
   const requestStatus: Record<string, { label: string; variant: any }> = {
     pendente: { label: "Pendente", variant: "default" },
@@ -172,11 +180,12 @@ function ProfilePage() {
                   <TableHead>Solicitado em</TableHead>
                   <TableHead>Decidido em</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {myRequests.length === 0 ? (
-                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-6">Nenhuma solicitação</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">Nenhuma solicitação</TableCell></TableRow>
                 ) : myRequests.map((r: any) => {
                   const s = requestStatus[r.status] ?? { label: r.status, variant: "default" as const };
                   return (
@@ -185,6 +194,13 @@ function ProfilePage() {
                       <TableCell className="text-sm">{new Date(r.created_at).toLocaleDateString("pt-BR")}</TableCell>
                       <TableCell className="text-sm">{r.decided_at ? new Date(r.decided_at).toLocaleDateString("pt-BR") : "—"}</TableCell>
                       <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        {r.status === "pendente" && (
+                          <Button size="sm" variant="ghost" onClick={() => cancelRequest(r.id)}>
+                            <X className="h-4 w-4 mr-1" />Cancelar
+                          </Button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   );
                 })}

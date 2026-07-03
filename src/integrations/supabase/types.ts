@@ -196,7 +196,22 @@ export type Database = {
           status?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "loan_requests_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loans: {
         Row: {
@@ -389,6 +404,7 @@ export type Database = {
         Returns: string
       }
       bootstrap_first_admin: { Args: never; Returns: boolean }
+      cancel_loan_request: { Args: { _request_id: string }; Returns: boolean }
       create_loan: {
         Args: { _book_id: string; _dias?: number; _user_id: string }
         Returns: string
