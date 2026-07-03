@@ -50,13 +50,30 @@ function ProfilePage() {
     queryFn: async () => (await supabase.from("loans").select("*, books(titulo, autor)").eq("user_id", user!.id).order("data_emprestimo", { ascending: false })).data ?? [],
   });
 
-  const { data: myRequests = [] } = useQuery({
+  const { data: myRequests = [], error: myRequestsError, refetch: refetchMyRequests } = useQuery({
     queryKey: ["my-requests", user?.id],
     enabled: !!user,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    queryFn: async () => (await supabase.from("loan_requests").select("*, books(titulo, autor)").eq("user_id", user!.id).order("created_at", { ascending: false })).data ?? [],
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("loan_requests")
+        .select("id, status, created_at, decided_at, observacao, book_id, books:book_id(titulo, autor)")
+        .eq("user_id", user!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
+
+  useEffect(() => {
+    if (myRequestsError) {
+      // eslint-disable-next-line no-console
+      console.error("[profile] falha ao carregar solicitações:", myRequestsError);
+      toast.error(`Erro ao carregar solicitações: ${myRequestsError.message}`);
+    }
+  }, [myRequestsError]);
 
   const { data: availableBooks = [] } = useQuery({
     queryKey: ["available-books"],
@@ -171,7 +188,10 @@ function ProfilePage() {
 
       <Card>
         <CardContent className="pt-6">
-          <h2 className="text-lg font-semibold mb-3">Minhas Solicitações</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Minhas Solicitações</h2>
+            <Button size="sm" variant="ghost" onClick={() => refetchMyRequests()}>Atualizar</Button>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -196,7 +216,7 @@ function ProfilePage() {
                       <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
                       <TableCell className="text-right">
                         {r.status === "pendente" && (
-                          <Button size="sm" variant="ghost" onClick={() => cancelRequest(r.id)}>
+                          <Button size="sm" variant="destructive" onClick={() => cancelRequest(r.id)}>
                             <X className="h-4 w-4 mr-1" />Cancelar
                           </Button>
                         )}
