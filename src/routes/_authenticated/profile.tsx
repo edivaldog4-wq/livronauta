@@ -115,6 +115,14 @@ function ProfilePage() {
     } catch (e: any) { toast.error(e.message); }
   };
 
+  const cancelRequest = async (id: string) => {
+    if (!confirm("Cancelar esta solicitação?")) return;
+    const { error } = await supabase.rpc("cancel_loan_request", { _request_id: id });
+    if (error) return toast.error(error.message);
+    toast.success("Solicitação cancelada");
+    invalidateAll();
+  };
+
   const today = new Date().toISOString().slice(0, 10);
   const requestStatus: Record<string, { label: string; variant: any }> = {
     pendente: { label: "Pendente", variant: "default" },
