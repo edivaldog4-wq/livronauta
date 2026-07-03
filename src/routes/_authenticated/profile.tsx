@@ -227,9 +227,6 @@ function ProfilePage() {
               </TableBody>
             </Table>
           </div>
-              </TableBody>
-            </Table>
-          </div>
         </CardContent>
       </Card>
 
