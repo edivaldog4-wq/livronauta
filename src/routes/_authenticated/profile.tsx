@@ -188,7 +188,10 @@ function ProfilePage() {
 
       <Card>
         <CardContent className="pt-6">
-          <h2 className="text-lg font-semibold mb-3">Minhas Solicitações</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold">Minhas Solicitações</h2>
+            <Button size="sm" variant="ghost" onClick={() => refetchMyRequests()}>Atualizar</Button>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
@@ -213,7 +216,7 @@ function ProfilePage() {
                       <TableCell><Badge variant={s.variant}>{s.label}</Badge></TableCell>
                       <TableCell className="text-right">
                         {r.status === "pendente" && (
-                          <Button size="sm" variant="ghost" onClick={() => cancelRequest(r.id)}>
+                          <Button size="sm" variant="destructive" onClick={() => cancelRequest(r.id)}>
                             <X className="h-4 w-4 mr-1" />Cancelar
                           </Button>
                         )}
@@ -221,6 +224,9 @@ function ProfilePage() {
                     </TableRow>
                   );
                 })}
+              </TableBody>
+            </Table>
+          </div>
               </TableBody>
             </Table>
           </div>
