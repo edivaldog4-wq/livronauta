@@ -361,20 +361,8 @@ function CatalogPage() {
     </div>
   );
 
-  return user ? <AppLayout title="Catálogo">{content}</AppLayout> : (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/catalog" className="flex items-center gap-2 font-semibold">
-            <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"><BookOpen className="h-4 w-4" /></div>
-            {libraryName}
-          </Link>
-          <Button asChild size="sm"><Link to="/auth">Entrar</Link></Button>
-        </div>
-      </header>
-      {content}
-    </div>
-  );
+  return <>{content}</>;
+
 }
 
 function StatTile({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
