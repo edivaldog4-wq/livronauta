@@ -12,14 +12,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2, RotateCcw, Send, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { AppLayout } from "@/components/AppLayout";
+
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useLibraryName } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/catalog")({
+export const Route = createFileRoute("/_authenticated/catalog")({
   head: () => ({ meta: [{ title: "Catálogo — Biblioteca" }] }),
   component: CatalogPage,
 });
@@ -361,20 +361,8 @@ function CatalogPage() {
     </div>
   );
 
-  return user ? <AppLayout title="Catálogo">{content}</AppLayout> : (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-          <Link to="/catalog" className="flex items-center gap-2 font-semibold">
-            <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center"><BookOpen className="h-4 w-4" /></div>
-            {libraryName}
-          </Link>
-          <Button asChild size="sm"><Link to="/auth">Entrar</Link></Button>
-        </div>
-      </header>
-      {content}
-    </div>
-  );
+  return <>{content}</>;
+
 }
 
 function StatTile({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
