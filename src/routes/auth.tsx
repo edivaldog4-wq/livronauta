@@ -58,6 +58,20 @@ function AuthPage() {
     setTab("login");
   };
 
+  const handleGoogle = async () => {
+    setBusy(true);
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    if (result?.error) {
+      setBusy(false);
+      toast.error("Falha no login Google: " + (result.error as any).message);
+      return;
+    }
+    if (result?.redirected) return;
+    setBusy(false);
+    navigate({ to: "/catalog" });
+  };
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,var(--accent),var(--background)_42%)] px-4">
       <Card className="w-full max-w-md shadow-xl">
