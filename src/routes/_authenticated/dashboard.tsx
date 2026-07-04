@@ -53,7 +53,7 @@ function DashboardPage() {
         emprestimosAtivos: loans.count ?? 0,
         membros: members.count ?? 0,
         atrasados: overdue.count ?? 0,
-        hasAdmin: (anyAdmin.count ?? 0) > 0,
+        hasAdmin: anyAdmin.data === true,
       };
     },
   });
