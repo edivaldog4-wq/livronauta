@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Search, BookOpen, LogIn, Library as LibIcon, CheckCircle2, Tags, UserCircle2, RotateCcw, Send, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { AppLayout } from "@/components/AppLayout";
+
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { useLibraryName } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
