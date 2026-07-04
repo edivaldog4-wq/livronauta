@@ -19,7 +19,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/catalog")({
+export const Route = createFileRoute("/_authenticated/catalog")({
   head: () => ({ meta: [{ title: "Catálogo — Biblioteca" }] }),
   component: CatalogPage,
 });
