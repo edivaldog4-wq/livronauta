@@ -42,8 +42,9 @@ function DashboardPage() {
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("data_devolucao_prevista", new Date().toISOString().slice(0, 10)),
-        supabase.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin"),
+        supabase.rpc("admin_exists"),
       ]);
+
       const total = (books.data ?? []).reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
       const disponiveis = (books.data ?? []).reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
       return {
@@ -52,7 +53,7 @@ function DashboardPage() {
         emprestimosAtivos: loans.count ?? 0,
         membros: members.count ?? 0,
         atrasados: overdue.count ?? 0,
-        hasAdmin: (anyAdmin.count ?? 0) > 0,
+        hasAdmin: anyAdmin.data === true,
       };
     },
   });

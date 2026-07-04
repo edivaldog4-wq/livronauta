@@ -399,6 +399,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_exists: { Args: never; Returns: boolean }
       approve_loan_request: {
         Args: { _dias?: number; _request_id: string }
         Returns: string
