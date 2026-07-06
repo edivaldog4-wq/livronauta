@@ -25,6 +25,7 @@ export function CsvImportDialog({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; phase: string } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [sortBy, setSortBy] = useState<"original" | "status" | "resolution" | "titulo" | "autor">("status");
 
   const { data: shelves = [] } = useQuery({
     queryKey: ["shelves"],
@@ -121,6 +122,26 @@ export function CsvImportDialog({ open, onClose }: Props) {
   const dupCount = rows.filter((r) => r.dup).length;
   const selCount = rows.filter((r) => r.selected && r.resolution !== "skip").length;
 
+  const resOrder: Record<Resolution, number> = { merge: 0, overwrite: 1, import: 2, skip: 3 };
+  const displayRows = rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "status": {
+          const av = a.r.dup ? 0 : 1, bv = b.r.dup ? 0 : 1;
+          return av !== bv ? av - bv : a.i - b.i;
+        }
+        case "resolution": {
+          const av = a.r.dup ? resOrder[a.r.resolution] : 4;
+          const bv = b.r.dup ? resOrder[b.r.resolution] : 4;
+          return av !== bv ? av - bv : a.i - b.i;
+        }
+        case "titulo": return a.r.titulo.localeCompare(b.r.titulo, "pt-BR");
+        case "autor": return (a.r.autor || "").localeCompare(b.r.autor || "", "pt-BR");
+        default: return a.i - b.i;
+      }
+    });
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
@@ -173,10 +194,23 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
         {rows.length > 0 && (
           <>
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <Badge variant="secondary">{rows.length} linhas</Badge>
               <Badge variant={dupCount ? "destructive" : "secondary"}>{dupCount} duplicatas</Badge>
               <Badge>{selCount} a importar</Badge>
+              <div className="ml-auto flex items-center gap-2">
+                <Label className="text-xs">Ordenar por</Label>
+                <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+                  <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="status">Status (duplicatas primeiro)</SelectItem>
+                    <SelectItem value="resolution">Ação escolhida</SelectItem>
+                    <SelectItem value="titulo">Título (A–Z)</SelectItem>
+                    <SelectItem value="autor">Autor (A–Z)</SelectItem>
+                    <SelectItem value="original">Ordem original do arquivo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             <div className="overflow-x-auto max-h-[50vh]">
               <Table>
@@ -191,7 +225,7 @@ export function CsvImportDialog({ open, onClose }: Props) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r, i) => (
+                  {displayRows.map(({ r, i }) => (
                     <TableRow key={i}>
                       <TableCell>
                         <Checkbox checked={r.selected} onCheckedChange={(v) => setRow(i, { selected: !!v })} />
