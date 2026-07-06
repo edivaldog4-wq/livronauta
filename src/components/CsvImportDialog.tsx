@@ -122,6 +122,26 @@ export function CsvImportDialog({ open, onClose }: Props) {
   const dupCount = rows.filter((r) => r.dup).length;
   const selCount = rows.filter((r) => r.selected && r.resolution !== "skip").length;
 
+  const resOrder: Record<Resolution, number> = { merge: 0, overwrite: 1, import: 2, skip: 3 };
+  const displayRows = rows
+    .map((r, i) => ({ r, i }))
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "status": {
+          const av = a.r.dup ? 0 : 1, bv = b.r.dup ? 0 : 1;
+          return av !== bv ? av - bv : a.i - b.i;
+        }
+        case "resolution": {
+          const av = a.r.dup ? resOrder[a.r.resolution] : 4;
+          const bv = b.r.dup ? resOrder[b.r.resolution] : 4;
+          return av !== bv ? av - bv : a.i - b.i;
+        }
+        case "titulo": return a.r.titulo.localeCompare(b.r.titulo, "pt-BR");
+        case "autor": return (a.r.autor || "").localeCompare(b.r.autor || "", "pt-BR");
+        default: return a.i - b.i;
+      }
+    });
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
