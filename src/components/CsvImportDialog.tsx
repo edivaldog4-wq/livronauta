@@ -58,7 +58,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
     setRows(candidates.map((c) => {
       const dup = dupBy(c);
-      return { ...c, dup, resolution: dup ? "skip" : "import", selected: true };
+      // Default for duplicates: sum copies (treat as additional exemplars), never silently skip
+      return { ...c, dup, resolution: dup ? "merge" : "import", selected: true };
     }));
     setProgress(null);
     toast.success(`${candidates.length} linhas carregadas`);
