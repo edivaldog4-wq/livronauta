@@ -203,12 +203,12 @@ export function CsvImportDialog({ open, onClose }: Props) {
                       <TableCell>
                         {r.dup ? (
                           <Select value={r.resolution} onValueChange={(v: any) => setRow(i, { resolution: v })}>
-                            <SelectTrigger className="h-8 w-44"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="skip">Ignorar (duplicata)</SelectItem>
+                              <SelectItem value="merge">Somar como novo exemplar (recomendado)</SelectItem>
+                              <SelectItem value="import">Importar mesmo assim (como novo livro)</SelectItem>
                               <SelectItem value="overwrite">Atualizar dados sem somar</SelectItem>
-                              <SelectItem value="merge">Somar exemplares ao existente</SelectItem>
-                              <SelectItem value="import">Importar só se não existir</SelectItem>
+                              <SelectItem value="skip">Ignorar</SelectItem>
                             </SelectContent>
                           </Select>
                         ) : <Badge variant="secondary">Novo</Badge>}
