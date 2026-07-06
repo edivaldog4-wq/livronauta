@@ -25,6 +25,7 @@ export function CsvImportDialog({ open, onClose }: Props) {
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number; phase: string } | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [sortBy, setSortBy] = useState<"original" | "status" | "resolution" | "titulo" | "autor">("status");
 
   const { data: shelves = [] } = useQuery({
     queryKey: ["shelves"],
