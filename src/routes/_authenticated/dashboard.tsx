@@ -38,17 +38,24 @@ function DashboardPage() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [books, loans, members, overdue, anyAdmin] = await Promise.all([
-        supabase.from("books").select("quantidade_total,quantidade_disponivel"),
+        supabase.from("books").select("titulo,quantidade_total,quantidade_disponivel"),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("data_devolucao_prevista", new Date().toISOString().slice(0, 10)),
         supabase.rpc("admin_exists"),
       ]);
 
-      const total = (books.data ?? []).reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
-      const disponiveis = (books.data ?? []).reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
+      const rows = books.data ?? [];
+      const total = rows.reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
+      const disponiveis = rows.reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
+      const exemplares = rows.length;
+      const titulos = new Set(
+        rows.map((b: any) => (b.titulo ?? "").trim().toLowerCase()).filter(Boolean),
+      ).size;
       return {
         totalLivros: total,
+        exemplares,
+        titulos,
         emprestados: total - disponiveis,
         emprestimosAtivos: loans.count ?? 0,
         membros: members.count ?? 0,
