@@ -59,8 +59,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
 
     setRows(candidates.map((c) => {
       const dup = dupBy(c);
-      // Default for duplicates: sum copies (treat as additional exemplars), never silently skip
-      return { ...c, dup, resolution: dup ? "merge" : "import", selected: true };
+      // Default: each CSV row becomes its own book record (never silently merged)
+      return { ...c, dup, resolution: "import", selected: true };
     }));
     setProgress(null);
     toast.success(`${candidates.length} linhas carregadas`);
@@ -239,8 +239,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
                           <Select value={r.resolution} onValueChange={(v: any) => setRow(i, { resolution: v })}>
                             <SelectTrigger className="h-8 w-56"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="merge">Somar como novo exemplar (recomendado)</SelectItem>
-                              <SelectItem value="import">Importar mesmo assim (como novo livro)</SelectItem>
+                              <SelectItem value="import">Criar novo registro (recomendado)</SelectItem>
+                              <SelectItem value="merge">Somar como exemplar do existente</SelectItem>
                               <SelectItem value="overwrite">Atualizar dados sem somar</SelectItem>
                               <SelectItem value="skip">Ignorar</SelectItem>
                             </SelectContent>
