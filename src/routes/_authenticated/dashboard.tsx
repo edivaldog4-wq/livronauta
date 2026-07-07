@@ -86,7 +86,7 @@ function DashboardPage() {
     staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase.from("loans")
-        .select("*, books(titulo), profiles(nome, numero)")
+        .select("*, books(titulo), profiles!loans_user_id_profiles_fkey(nome, numero)")
         .order("data_emprestimo", { ascending: false })
         .limit(100);
       return data ?? [];
