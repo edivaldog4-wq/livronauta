@@ -196,8 +196,10 @@ function DashboardPage() {
       ) : (
         <>
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            <StatCard icon={BookOpen} label="Total de Livros" value={stats?.totalLivros ?? 0} color="text-primary" />
-            <StatCard icon={RefreshCw} label="Empréstimos Ativos" value={stats?.emprestimosAtivos ?? 0} color="text-accent-foreground" />
+            <StatCard icon={BookOpen} label="Títulos" value={stats?.titulos ?? 0} color="text-primary" />
+            <StatCard icon={BookOpen} label="Exemplares únicos" value={stats?.exemplares ?? 0} color="text-primary" />
+            <StatCard icon={BookOpen} label="Total de livros" value={stats?.totalLivros ?? 0} color="text-primary" />
+            <StatCard icon={RefreshCw} label="Empréstimos ativos" value={stats?.emprestimosAtivos ?? 0} color="text-accent-foreground" />
             <StatCard icon={Users} label="Membros" value={stats?.membros ?? 0} color="text-secondary" />
             <StatCard icon={AlertTriangle} label="Atrasados" value={stats?.atrasados ?? 0} color="text-destructive" />
           </div>
