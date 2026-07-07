@@ -52,7 +52,7 @@ function LoansPage() {
     staleTime: 0,
     queryFn: async () => {
       const { data } = await supabase.from("loans")
-        .select("*, books(titulo, autor, isbn), profiles(nome, email, numero)")
+        .select("*, books(titulo, autor, isbn), profiles!loans_user_id_profiles_fkey(nome, email, numero)")
         .order("data_emprestimo", { ascending: false });
       return data ?? [];
     },
