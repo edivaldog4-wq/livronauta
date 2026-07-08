@@ -38,7 +38,7 @@ function DashboardPage() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [books, loans, members, overdue, anyAdmin] = await Promise.all([
-        supabase.from("books").select("titulo,quantidade_total,quantidade_disponivel"),
+        supabase.from("books").select("titulo,autor,quantidade_total,quantidade_disponivel"),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("data_devolucao_prevista", new Date().toISOString().slice(0, 10)),
@@ -50,7 +50,9 @@ function DashboardPage() {
       const disponiveis = rows.reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
       const exemplares = rows.length;
       const titulos = new Set(
-        rows.map((b: any) => (b.titulo ?? "").trim().toLowerCase()).filter(Boolean),
+        rows
+          .map((b: any) => `${(b.titulo ?? "").trim().toLowerCase()}|${(b.autor ?? "").trim().toLowerCase()}`)
+          .filter((k) => k !== "|"),
       ).size;
       return {
         totalLivros: total,
@@ -62,6 +64,7 @@ function DashboardPage() {
         atrasados: overdue.count ?? 0,
         hasAdmin: anyAdmin.data === true,
       };
+
     },
   });
 
