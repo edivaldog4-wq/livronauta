@@ -38,14 +38,14 @@ function DashboardPage() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [books, loans, members, overdue, anyAdmin] = await Promise.all([
-        supabase.from("books").select("titulo,autor,quantidade_total,quantidade_disponivel"),
+        fetchAllBooks<{ titulo: string; autor: string; quantidade_total: number; quantidade_disponivel: number }>("titulo,autor,quantidade_total,quantidade_disponivel"),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("data_devolucao_prevista", new Date().toISOString().slice(0, 10)),
         supabase.rpc("admin_exists"),
       ]);
 
-      const rows = books.data ?? [];
+      const rows = books ?? [];
       const total = rows.reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
       const disponiveis = rows.reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
       const exemplares = rows.length;
