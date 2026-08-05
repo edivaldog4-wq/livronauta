@@ -46,14 +46,14 @@ function DashboardPage() {
         supabase.rpc("admin_exists"),
       ]);
 
-      const rows = books ?? [];
-      const total = rows.reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
-      const disponiveis = rows.reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
+      const rows: any[] = (books as any[]) ?? [];
+      const total = rows.reduce((a: number, b: any) => a + (b.quantidade_total ?? 0), 0);
+      const disponiveis = rows.reduce((a: number, b: any) => a + (b.quantidade_disponivel ?? 0), 0);
       const exemplares = rows.length;
       const titulos = new Set(
         rows
           .map((b: any) => `${(b.titulo ?? "").trim().toLowerCase()}|${(b.autor ?? "").trim().toLowerCase()}`)
-          .filter((k) => k !== "|"),
+          .filter((k: string) => k !== "|"),
       ).size;
       return {
         totalLivros: total,
