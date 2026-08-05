@@ -116,10 +116,11 @@ function LabelsPage() {
         seq += 1;
         const codigo = `${base}-${String(seq).padStart(4, "0")}`;
         out.push({ codigo, book });
-        rows.push({ book_id: book.id, codigo_barras: codigo });
+        rows.push({ book_id: book.id, codigo_barras: codigo.trim() || null });
       }
     }
-    await supabase.from("labels").upsert(rows, { onConflict: "codigo_barras", ignoreDuplicates: true });
+    const { error } = await supabase.from("labels").insert(rows);
+    if (error) return toast.error(`Erro ao gravar etiquetas: ${error.message}`);
     setLabels(out);
     toast.success(`${out.length} etiquetas geradas`);
   };

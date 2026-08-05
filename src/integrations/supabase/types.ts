@@ -139,19 +139,19 @@ export type Database = {
       labels: {
         Row: {
           book_id: string
-          codigo_barras: string
+          codigo_barras: string | null
           data_geracao: string
           id: string
         }
         Insert: {
           book_id: string
-          codigo_barras: string
+          codigo_barras?: string | null
           data_geracao?: string
           id?: string
         }
         Update: {
           book_id?: string
-          codigo_barras?: string
+          codigo_barras?: string | null
           data_geracao?: string
           id?: string
         }
