@@ -19,6 +19,7 @@ const items: NavItem[] = [
   { title: "Etiquetas", url: "/labels", icon: Tag, staff: true },
   { title: "Usuários", url: "/users", icon: Users, staff: true },
   { title: "Auditoria", url: "/audit", icon: History, staff: true },
+  { title: "Importações", url: "/imports", icon: Upload, staff: true },
   { title: "Meu Perfil", url: "/profile", icon: UserIcon },
   { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
 ];
