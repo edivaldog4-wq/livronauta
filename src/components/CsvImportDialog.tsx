@@ -33,6 +33,7 @@ export function CsvImportDialog({ open, onClose }: Props) {
   });
 
   const processFile = async (f: File) => {
+    setFilename(f.name);
     setProgress({ current: 0, total: 0, phase: "Lendo arquivo..." });
     const text = await f.text();
     const parsed = parseLibibCsv(text);
@@ -41,7 +42,8 @@ export function CsvImportDialog({ open, onClose }: Props) {
     setProgress({ current: 0, total: parsed.length, phase: "Verificando duplicatas..." });
     const candidates = parsed.map(rowToBook);
 
-    const { data: existing } = await supabase.from("books").select("id, titulo, autor, isbn").limit(10000);
+    // Paginado: PostgREST devolve no máximo 1000 linhas por requisição.
+    const existing = await fetchAllBooks<any>("id, titulo, autor, isbn");
     const existingByKey = new Map<string, any>();
     (existing ?? []).forEach((b: any) => {
       const isbnKey = normalizeIsbn(b.isbn);
