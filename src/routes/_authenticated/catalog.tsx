@@ -113,7 +113,7 @@ function CatalogPage() {
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ["all-books-stats"],
-    queryFn: async () => (await supabase.from("books").select("autor, quantidade_total, quantidade_disponivel, categories(nome)")).data ?? [],
+    queryFn: async () => await fetchAllBooks<any>("autor, quantidade_total, quantidade_disponivel, categories(nome)"),
   });
 
   const stats = (() => {
