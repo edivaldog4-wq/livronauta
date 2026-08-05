@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History } from "lucide-react";
+import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
