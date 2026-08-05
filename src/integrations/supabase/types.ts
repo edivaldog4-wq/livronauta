@@ -136,6 +136,54 @@ export type Database = {
         }
         Relationships: []
       }
+      import_logs: {
+        Row: {
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          details: Json
+          errors: Json
+          filename: string | null
+          id: string
+          imported: number
+          merged: number
+          selected_rows: number
+          skipped: number
+          total_rows: number
+          updated: number
+        }
+        Insert: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          errors?: Json
+          filename?: string | null
+          id?: string
+          imported?: number
+          merged?: number
+          selected_rows?: number
+          skipped?: number
+          total_rows?: number
+          updated?: number
+        }
+        Update: {
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          details?: Json
+          errors?: Json
+          filename?: string | null
+          id?: string
+          imported?: number
+          merged?: number
+          selected_rows?: number
+          skipped?: number
+          total_rows?: number
+          updated?: number
+        }
+        Relationships: []
+      }
       labels: {
         Row: {
           book_id: string
