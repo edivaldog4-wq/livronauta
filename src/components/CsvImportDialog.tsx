@@ -21,6 +21,7 @@ interface Props { open: boolean; onClose: () => void }
 export function CsvImportDialog({ open, onClose }: Props) {
   const qc = useQueryClient();
   const [rows, setRows] = useState<Row[]>([]);
+  const [filename, setFilename] = useState<string>("");
   const [shelf, setShelf] = useState<string>("none");
   const [newShelf, setNewShelf] = useState("");
   const [loading, setLoading] = useState(false);
