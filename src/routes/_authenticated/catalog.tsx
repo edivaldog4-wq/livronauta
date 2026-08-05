@@ -18,6 +18,7 @@ import { useLibraryName } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
 import { toast } from "sonner";
+import { fetchAllBooks } from "@/lib/books-stats";
 
 export const Route = createFileRoute("/_authenticated/catalog")({
   head: () => ({ meta: [{ title: "Catálogo — Biblioteca" }] }),
