@@ -104,7 +104,30 @@ export function CsvImportDialog({ open, onClose }: Props) {
       const { data, error } = await supabase.rpc("import_books_batch", { _items: payload as any });
       if (error) throw new Error(error.message);
       const result: any = data ?? {};
+
+      // Log persistente da importação (visível em "Importações")
+      const { data: userRes } = await supabase.auth.getUser();
+      const { error: logError } = await supabase.from("import_logs").insert({
+        actor_id: userRes?.user?.id ?? null,
+        actor_email: userRes?.user?.email ?? null,
+        filename,
+        total_rows: rows.length,
+        selected_rows: work.length,
+        imported: result.imported ?? 0,
+        updated: result.updated ?? 0,
+        merged: result.merged ?? 0,
+        skipped: result.skipped ?? 0,
+        errors: result.errors ?? [],
+        details: result.details ?? [],
+      });
+      if (logError) toast.error(`Importação feita, mas o log não foi salvo: ${logError.message}`);
+      qc.invalidateQueries({ queryKey: ["import-logs"] });
+
+      const errCount = Array.isArray(result.errors) ? result.errors.length : 0;
       toast.success(`Importação concluída: ${result.imported ?? 0} adicionados, ${result.updated ?? 0} atualizados, ${result.merged ?? 0} somados, ${result.skipped ?? 0} ignorados`);
+      if (errCount > 0) {
+        toast.error(`${errCount} linha(s) falharam. Veja o motivo em "Importações".`, { duration: 8000 });
+      }
       qc.invalidateQueries({ queryKey: ["books-admin"] });
       qc.invalidateQueries({ queryKey: ["books-catalog"] });
       qc.invalidateQueries({ queryKey: ["all-books-stats"] });
