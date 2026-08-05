@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { bookDedupKey, normalizeBookText, normalizeIsbn, parseLibibCsv, rowToBook, type LibibBookCandidate } from "@/lib/libib-csv";
+import { fetchAllBooks } from "@/lib/books-stats";
 
 type Resolution = "skip" | "import" | "overwrite" | "merge";
 type Row = LibibBookCandidate & { dup: any | null; resolution: Resolution; selected: boolean };
