@@ -14,6 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useLibraryName } from "@/lib/library";
 import { useRealtime } from "@/lib/use-realtime";
+import { fetchAllBooks } from "@/lib/books-stats";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Biblioteca" }] }),
