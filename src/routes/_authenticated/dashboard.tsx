@@ -14,6 +14,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { useLibraryName } from "@/lib/library";
 import { useRealtime } from "@/lib/use-realtime";
+import { fetchAllBooks } from "@/lib/books-stats";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Dashboard — Biblioteca" }] }),
@@ -38,21 +39,21 @@ function DashboardPage() {
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const [books, loans, members, overdue, anyAdmin] = await Promise.all([
-        supabase.from("books").select("titulo,autor,quantidade_total,quantidade_disponivel"),
+        fetchAllBooks<{ titulo: string; autor: string; quantidade_total: number; quantidade_disponivel: number }>("titulo,autor,quantidade_total,quantidade_disponivel"),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo"),
         supabase.from("profiles").select("id", { count: "exact", head: true }),
         supabase.from("loans").select("id", { count: "exact", head: true }).eq("status", "ativo").lt("data_devolucao_prevista", new Date().toISOString().slice(0, 10)),
         supabase.rpc("admin_exists"),
       ]);
 
-      const rows = books.data ?? [];
-      const total = rows.reduce((a, b) => a + (b.quantidade_total ?? 0), 0);
-      const disponiveis = rows.reduce((a, b) => a + (b.quantidade_disponivel ?? 0), 0);
+      const rows: any[] = (books as any[]) ?? [];
+      const total = rows.reduce((a: number, b: any) => a + (b.quantidade_total ?? 0), 0);
+      const disponiveis = rows.reduce((a: number, b: any) => a + (b.quantidade_disponivel ?? 0), 0);
       const exemplares = rows.length;
       const titulos = new Set(
         rows
           .map((b: any) => `${(b.titulo ?? "").trim().toLowerCase()}|${(b.autor ?? "").trim().toLowerCase()}`)
-          .filter((k) => k !== "|"),
+          .filter((k: string) => k !== "|"),
       ).size;
       return {
         totalLivros: total,

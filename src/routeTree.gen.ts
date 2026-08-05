@@ -17,6 +17,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedLoansRouteImport } from './routes/_authenticated/loans'
 import { Route as AuthenticatedLabelsRouteImport } from './routes/_authenticated/labels'
+import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCatalogRouteImport } from './routes/_authenticated/catalog'
 import { Route as AuthenticatedBooksRouteImport } from './routes/_authenticated/books'
@@ -61,6 +62,11 @@ const AuthenticatedLabelsRoute = AuthenticatedLabelsRouteImport.update({
   path: '/labels',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportsRoute = AuthenticatedImportsRouteImport.update({
+  id: '/imports',
+  path: '/imports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/books': typeof AuthenticatedBooksRoute
   '/catalog': typeof AuthenticatedCatalogRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/labels': typeof AuthenticatedLabelsRoute
   '/loans': typeof AuthenticatedLoansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/books': typeof AuthenticatedBooksRoute
   '/catalog': typeof AuthenticatedCatalogRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/imports': typeof AuthenticatedImportsRoute
   '/labels': typeof AuthenticatedLabelsRoute
   '/loans': typeof AuthenticatedLoansRoute
   '/profile': typeof AuthenticatedProfileRoute
@@ -117,6 +125,7 @@ export interface FileRoutesById {
   '/_authenticated/books': typeof AuthenticatedBooksRoute
   '/_authenticated/catalog': typeof AuthenticatedCatalogRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/labels': typeof AuthenticatedLabelsRoute
   '/_authenticated/loans': typeof AuthenticatedLoansRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
@@ -132,6 +141,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/catalog'
     | '/dashboard'
+    | '/imports'
     | '/labels'
     | '/loans'
     | '/profile'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
     | '/books'
     | '/catalog'
     | '/dashboard'
+    | '/imports'
     | '/labels'
     | '/loans'
     | '/profile'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '/_authenticated/books'
     | '/_authenticated/catalog'
     | '/_authenticated/dashboard'
+    | '/_authenticated/imports'
     | '/_authenticated/labels'
     | '/_authenticated/loans'
     | '/_authenticated/profile'
@@ -230,6 +242,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLabelsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/imports': {
+      id: '/_authenticated/imports'
+      path: '/imports'
+      fullPath: '/imports'
+      preLoaderRoute: typeof AuthenticatedImportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -266,6 +285,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedBooksRoute: typeof AuthenticatedBooksRoute
   AuthenticatedCatalogRoute: typeof AuthenticatedCatalogRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedLabelsRoute: typeof AuthenticatedLabelsRoute
   AuthenticatedLoansRoute: typeof AuthenticatedLoansRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
@@ -278,6 +298,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedBooksRoute: AuthenticatedBooksRoute,
   AuthenticatedCatalogRoute: AuthenticatedCatalogRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedLabelsRoute: AuthenticatedLabelsRoute,
   AuthenticatedLoansRoute: AuthenticatedLoansRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,

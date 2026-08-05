@@ -18,6 +18,7 @@ import { useLibraryName } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
 import { requestLoan, returnLoan } from "@/lib/loans.functions";
 import { toast } from "sonner";
+import { fetchAllBooks } from "@/lib/books-stats";
 
 export const Route = createFileRoute("/_authenticated/catalog")({
   head: () => ({ meta: [{ title: "Catálogo — Biblioteca" }] }),
@@ -113,7 +114,7 @@ function CatalogPage() {
 
   const { data: allBooks = [] } = useQuery({
     queryKey: ["all-books-stats"],
-    queryFn: async () => (await supabase.from("books").select("autor, quantidade_total, quantidade_disponivel, categories(nome)")).data ?? [],
+    queryFn: async () => await fetchAllBooks<any>("autor, quantidade_total, quantidade_disponivel, categories(nome)"),
   });
 
   const stats = (() => {
