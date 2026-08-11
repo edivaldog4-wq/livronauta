@@ -130,10 +130,10 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-[min(28rem,calc(100vw-2rem))] w-full p-4 sm:p-6">
         <DialogHeader><DialogTitle>Escanear código de barras</DialogTitle></DialogHeader>
         <div className="rounded-lg overflow-hidden bg-black">
-          <div ref={ref} style={{ width: "100%", minHeight: 280 }} />
+          <div ref={ref} style={{ width: "100%", minHeight: 240 }} />
         </div>
         {error && <p className="text-xs text-destructive">{error}</p>}
         <p className="text-xs text-muted-foreground">
