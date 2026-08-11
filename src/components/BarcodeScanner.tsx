@@ -13,7 +13,6 @@ interface Props {
 export function BarcodeScanner({ open, onClose, onResult }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const scannerRef = useRef<any>(null);
-  const fileScannerRef = useRef<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [manual, setManual] = useState("");
 
@@ -28,6 +27,7 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
         if (cancelled || !ref.current) return;
         const id = "scanner-region";
         ref.current.id = id;
+        ref.current.innerHTML = "";
         const formats = [
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -44,18 +44,22 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
           experimentalFeatures: { useBarCodeDetectorIfSupported: true },
         });
         scannerRef.current = scanner;
-        fileScannerRef.current = scanner;
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 20,
+            fps: 15,
             qrbox: (vw: number, vh: number) => {
               const min = Math.min(vw, vh);
-              const w = Math.floor(min * 0.9);
-              return { width: w, height: Math.floor(w * 0.45) };
+              const w = Math.floor(min * 0.7);
+              return { width: w, height: Math.floor(w * 0.5) };
             },
-            aspectRatio: 1.7777,
+            aspectRatio: 1.0,
             disableFlip: false,
+            videoConstraints: {
+              facingMode: "environment",
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+            },
           },
           (decoded: string) => {
             try {
@@ -85,7 +89,7 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
         scannerRef.current = null;
       }
     };
-  }, [open, onClose, onResult]);
+  }, [open, onResult]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,7 +97,6 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
     try {
       const mod = await import("html5-qrcode");
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod as any;
-      // create a hidden temp scanner for file mode
       const tempId = "scanner-file-region";
       let el = document.getElementById(tempId);
       if (!el) {
@@ -130,25 +133,38 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[min(28rem,calc(100vw-2rem))] w-full p-4 sm:p-6">
-        <DialogHeader><DialogTitle>Escanear código de barras</DialogTitle></DialogHeader>
-        <div className="rounded-lg overflow-hidden bg-black">
-          <div ref={ref} style={{ width: "100%", minHeight: 240 }} />
+      <DialogContent className="max-w-[min(28rem,calc(100vw-2rem))] w-full max-h-[92dvh] p-4 sm:p-6 flex flex-col overflow-hidden gap-0">
+        <DialogHeader className="shrink-0 pb-3">
+          <DialogTitle>Escanear código de barras</DialogTitle>
+        </DialogHeader>
+
+        <div className="relative shrink-0 rounded-lg overflow-hidden bg-black border border-border/50" style={{ height: 220, maxHeight: "40dvh" }}>
+          <div
+            ref={ref}
+            id="scanner-region"
+            className="absolute inset-0 w-full h-full [&_video]:!w-full [&_video]:!h-full [&_video]:object-cover [&_canvas]:!w-full [&_canvas]:!h-full [&_img]:!w-full [&_img]:!h-full"
+          />
         </div>
-        {error && <p className="text-xs text-destructive">{error}</p>}
-        <p className="text-xs text-muted-foreground">
-          Centralize o código de barras EAN-13 horizontalmente, a ~10–20 cm da câmera, com boa luz.
-          Se a câmera não capturar, envie uma foto ou digite o código.
-        </p>
-        <div className="space-y-2">
-          <Label className="text-xs">Enviar foto do código</Label>
-          <Input type="file" accept="image/*" capture="environment" onChange={handleFile} />
-        </div>
-        <div className="space-y-2">
-          <Label className="text-xs">Digitar código manualmente</Label>
-          <div className="flex gap-2">
-            <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="ISBN ou EAN" inputMode="numeric" />
-            <Button type="button" onClick={submitManual}>Buscar</Button>
+
+        <div className="shrink-0 pt-3 min-h-0 overflow-y-auto">
+          {error && <p className="text-xs text-destructive mb-2">{error}</p>}
+          <p className="text-xs text-muted-foreground mb-3">
+            Centralize o código de barras EAN-13 horizontalmente, a ~10–20 cm da câmera, com boa luz.
+            Se a câmera não capturar, envie uma foto ou digite o código.
+          </p>
+
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Enviar foto do código</Label>
+              <Input type="file" accept="image/*" capture="environment" onChange={handleFile} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Digitar código manualmente</Label>
+              <div className="flex gap-2">
+                <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="ISBN ou EAN" inputMode="numeric" />
+                <Button type="button" onClick={submitManual}>Buscar</Button>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
