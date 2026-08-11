@@ -25,8 +25,6 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
         const mod = await import("html5-qrcode");
         const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod as any;
         if (cancelled || !ref.current) return;
-        const id = "scanner-region";
-        ref.current.id = id;
         ref.current.innerHTML = "";
         const formats = [
           Html5QrcodeSupportedFormats.EAN_13,
@@ -38,7 +36,7 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
           Html5QrcodeSupportedFormats.ITF,
           Html5QrcodeSupportedFormats.QR_CODE,
         ];
-        const scanner = new Html5Qrcode(id, {
+        const scanner = new Html5Qrcode("scanner-region", {
           formatsToSupport: formats,
           verbose: false,
           experimentalFeatures: { useBarCodeDetectorIfSupported: true },
@@ -50,10 +48,10 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
             fps: 15,
             qrbox: (vw: number, vh: number) => {
               const min = Math.min(vw, vh);
-              const w = Math.floor(min * 0.7);
-              return { width: w, height: Math.floor(w * 0.5) };
+              const w = Math.floor(min * 0.8);
+              return { width: w, height: Math.floor(w * 0.45) };
             },
-            aspectRatio: 1.0,
+            aspectRatio: 1.7777,
             disableFlip: false,
             videoConstraints: {
               facingMode: "environment",
