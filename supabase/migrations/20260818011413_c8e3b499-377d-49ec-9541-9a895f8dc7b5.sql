@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.normalize_book_text(text) TO authenticated, anon, service_role;
