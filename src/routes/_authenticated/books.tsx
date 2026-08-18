@@ -300,9 +300,17 @@ function BooksPage() {
               <TableBody>
                 {books.length === 0 ? (
                   <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
-                ) : books.map((b: any) => (
+                ) : books.map((b: any, idx: number) => (
                   <TableRow key={b.id} data-state={selected.has(b.id) ? "selected" : undefined}>
-                    <TableCell><Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleSelect(b.id)} /></TableCell>
+                    <TableCell>
+                      <span
+                        onPointerDown={(e) => { shiftRef.current = e.shiftKey; }}
+                        onKeyDown={(e) => { shiftRef.current = e.shiftKey; }}
+                        className="inline-flex select-none"
+                      >
+                        <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleSelect(b.id, idx)} />
+                      </span>
+                    </TableCell>
                     <TableCell>
                       {b.capa_url ? (
                         <img src={b.capa_url} alt={b.titulo} className="h-12 w-9 object-cover rounded shadow-sm" loading="lazy" />
