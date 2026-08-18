@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -185,15 +185,31 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
-  const toggleSelect = (id: string) => {
+  const lastIndexRef = useRef<number | null>(null);
+  const shiftRef = useRef(false);
+
+  const toggleSelect = (id: string, index: number) => {
     const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (shiftRef.current && lastIndexRef.current !== null) {
+      const [a, b] = [lastIndexRef.current, index].sort((x, y) => x - y);
+      const shouldSelect = !next.has(id);
+      for (let i = a; i <= b; i++) {
+        const rid = books[i]?.id;
+        if (!rid) continue;
+        if (shouldSelect) next.add(rid); else next.delete(rid);
+      }
+    } else {
+      if (next.has(id)) next.delete(id); else next.add(id);
+    }
+    lastIndexRef.current = index;
     setSelected(next);
   };
   const toggleAll = () => {
+    lastIndexRef.current = null;
     if (selected.size === books.length) setSelected(new Set());
     else setSelected(new Set(books.map((b: any) => b.id)));
   };
+
 
   const bulkDelete = async () => {
     if (selected.size === 0) return;
@@ -284,9 +300,17 @@ function BooksPage() {
               <TableBody>
                 {books.length === 0 ? (
                   <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum livro cadastrado</TableCell></TableRow>
-                ) : books.map((b: any) => (
+                ) : books.map((b: any, idx: number) => (
                   <TableRow key={b.id} data-state={selected.has(b.id) ? "selected" : undefined}>
-                    <TableCell><Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleSelect(b.id)} /></TableCell>
+                    <TableCell>
+                      <span
+                        onPointerDown={(e) => { shiftRef.current = e.shiftKey; }}
+                        onKeyDown={(e) => { shiftRef.current = e.shiftKey; }}
+                        className="inline-flex select-none"
+                      >
+                        <Checkbox checked={selected.has(b.id)} onCheckedChange={() => toggleSelect(b.id, idx)} />
+                      </span>
+                    </TableCell>
                     <TableCell>
                       {b.capa_url ? (
                         <img src={b.capa_url} alt={b.titulo} className="h-12 w-9 object-cover rounded shadow-sm" loading="lazy" />
