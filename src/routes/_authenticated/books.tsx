@@ -185,15 +185,31 @@ function BooksPage() {
     qc.invalidateQueries({ queryKey: ["books-admin"] });
   };
 
-  const toggleSelect = (id: string) => {
+  const lastIndexRef = useRef<number | null>(null);
+  const shiftRef = useRef(false);
+
+  const toggleSelect = (id: string, index: number) => {
     const next = new Set(selected);
-    if (next.has(id)) next.delete(id); else next.add(id);
+    if (shiftRef.current && lastIndexRef.current !== null) {
+      const [a, b] = [lastIndexRef.current, index].sort((x, y) => x - y);
+      const shouldSelect = !next.has(id);
+      for (let i = a; i <= b; i++) {
+        const rid = books[i]?.id;
+        if (!rid) continue;
+        if (shouldSelect) next.add(rid); else next.delete(rid);
+      }
+    } else {
+      if (next.has(id)) next.delete(id); else next.add(id);
+    }
+    lastIndexRef.current = index;
     setSelected(next);
   };
   const toggleAll = () => {
+    lastIndexRef.current = null;
     if (selected.size === books.length) setSelected(new Set());
     else setSelected(new Set(books.map((b: any) => b.id)));
   };
+
 
   const bulkDelete = async () => {
     if (selected.size === 0) return;
