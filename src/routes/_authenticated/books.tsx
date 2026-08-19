@@ -372,6 +372,31 @@ function BooksPage() {
               </TableBody>
             </Table>
           </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 flex-wrap border-t border-border/60 pt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Linhas por página</span>
+              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                <SelectTrigger className="w-[90px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {total === 0 ? "0 resultados" : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`}
+              </span>
+              <Button size="sm" variant="outline" onClick={() => setPage(1)} disabled={page <= 1}>«</Button>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
+              <span className="text-sm">Página {page} de {totalPages}</span>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Próxima</Button>
+              <Button size="sm" variant="outline" onClick={() => setPage(totalPages)} disabled={page >= totalPages}>»</Button>
+            </div>
+          </div>
+
         </CardContent>
       </Card>
 
