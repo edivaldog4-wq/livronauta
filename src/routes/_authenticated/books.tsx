@@ -233,11 +233,15 @@ function BooksPage() {
     lastIndexRef.current = index;
     setSelected(next);
   };
+  const pageAllSelected = books.length > 0 && books.every((b: any) => selected.has(b.id));
   const toggleAll = () => {
     lastIndexRef.current = null;
-    if (selected.size === books.length) setSelected(new Set());
-    else setSelected(new Set(books.map((b: any) => b.id)));
+    const next = new Set(selected);
+    if (pageAllSelected) books.forEach((b: any) => next.delete(b.id));
+    else books.forEach((b: any) => next.add(b.id));
+    setSelected(next);
   };
+
 
 
   const bulkDelete = async () => {
