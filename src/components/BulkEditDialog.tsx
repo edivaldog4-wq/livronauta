@@ -56,9 +56,14 @@ export function BulkEditDialog({ open, onClose, bookIds }: Props) {
     if (Object.keys(patch).length === 0) return toast.error("Selecione ao menos um campo para alterar");
     setLoading(true);
     try {
-      const { error } = await supabase.from("books").update(patch as any).in("id", bookIds);
-      if (error) throw error;
+      // Lotes de 200 ids: URLs muito longas falham em seleções grandes (>1000 livros).
+      for (let i = 0; i < bookIds.length; i += 200) {
+        const chunk = bookIds.slice(i, i + 200);
+        const { error } = await supabase.from("books").update(patch as any).in("id", chunk);
+        if (error) throw error;
+      }
       toast.success(`${bookIds.length} livro(s) atualizado(s)`);
+
       qc.invalidateQueries({ queryKey: ["books-admin"] });
       qc.invalidateQueries({ queryKey: ["books-catalog"] });
       onClose();
