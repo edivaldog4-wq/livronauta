@@ -14,6 +14,24 @@ function normalizeScannedCode(value: string) {
   return trimmed;
 }
 
+async function buildReader() {
+  const { BrowserMultiFormatReader } = await import("@zxing/browser");
+  const { BarcodeFormat, DecodeHintType } = await import("@zxing/library");
+  const hints = new Map();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+    BarcodeFormat.EAN_13,
+    BarcodeFormat.EAN_8,
+    BarcodeFormat.UPC_A,
+    BarcodeFormat.UPC_E,
+    BarcodeFormat.CODE_128,
+    BarcodeFormat.CODE_39,
+    BarcodeFormat.ITF,
+    BarcodeFormat.QR_CODE,
+  ]);
+  hints.set(DecodeHintType.TRY_HARDER, true);
+  return new BrowserMultiFormatReader(hints as any, { delayBetweenScanAttempts: 80 } as any);
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -21,8 +39,8 @@ interface Props {
 }
 
 export function BarcodeScanner({ open, onClose, onResult }: Props) {
-  const ref = useRef<HTMLDivElement>(null);
-  const scannerRef = useRef<any>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const controlsRef = useRef<any>(null);
   const onResultRef = useRef(onResult);
   const decodedRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,114 +55,77 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
     decodedRef.current = false;
     setError(null);
     setCameraReady(false);
+
     (async () => {
       try {
-        const mod = await import("html5-qrcode");
-        const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod as any;
-        if (cancelled || !ref.current) return;
-        ref.current.innerHTML = "";
-        const formats = [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.QR_CODE,
-        ];
-        const scanner = new Html5Qrcode("scanner-region", {
-          formatsToSupport: formats,
-          verbose: false,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
-        });
-        scannerRef.current = scanner;
-        await scanner.start(
+        const reader = await buildReader();
+        if (cancelled || !videoRef.current) return;
+        const controls = await reader.decodeFromConstraints(
           {
-            facingMode: { ideal: "environment" },
-            width: { ideal: 1920 },
-            height: { ideal: 1080 },
-          },
-          {
-            fps: 20,
-            qrbox: (vw: number, vh: number) => {
-              const width = Math.max(220, Math.floor(vw * 0.9));
-              const height = Math.max(80, Math.min(130, Math.floor(vh * 0.42)));
-              return { width: Math.min(width, vw - 8), height: Math.min(height, vh - 8) };
+            audio: false,
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
             },
-            disableFlip: false,
           },
-          (decoded: string) => {
-            if (decodedRef.current) return;
-            const code = normalizeScannedCode(decoded);
+          videoRef.current,
+          (result: any) => {
+            if (decodedRef.current || !result) return;
+            const code = normalizeScannedCode(result.getText?.() ?? String(result));
             if (!code) return;
             decodedRef.current = true;
             try {
               onResultRef.current(code);
             } finally {
-              scanner.stop().catch(() => {});
+              try { controls.stop(); } catch { /* noop */ }
             }
           },
-          () => {},
         );
-        if (cancelled) return;
+        controlsRef.current = controls;
+        if (cancelled) {
+          try { controls.stop(); } catch { /* noop */ }
+          return;
+        }
         setCameraReady(true);
-        scanner
-          .applyVideoConstraints({ advanced: [{ focusMode: "continuous" }] })
-          .catch(() => {});
+        try {
+          await (controls as any).switchTorch?.(false);
+        } catch { /* noop */ }
       } catch (e: any) {
         console.error("Scanner error", e);
         if (!cancelled) {
           setError(
-            e?.message?.includes("Permission")
+            String(e?.name ?? "").includes("NotAllowed") || e?.message?.includes("Permission")
               ? "Permissão de câmera negada. Conceda acesso à câmera no navegador."
               : "Não foi possível iniciar a câmera. Use o envio de imagem ou digite o código manualmente.",
           );
         }
       }
     })();
+
     return () => {
       cancelled = true;
       setCameraReady(false);
-      const s = scannerRef.current;
-      if (s) {
-        s.stop().catch(() => {}).finally(() => s.clear().catch(() => {}));
-        scannerRef.current = null;
-      }
+      const c = controlsRef.current;
+      controlsRef.current = null;
+      if (c) { try { c.stop(); } catch { /* noop */ } }
     };
   }, [open]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const url = URL.createObjectURL(file);
     try {
-      const mod = await import("html5-qrcode");
-      const { Html5Qrcode, Html5QrcodeSupportedFormats } = mod as any;
-      const tempId = "scanner-file-region";
-      let el = document.getElementById(tempId);
-      if (!el) {
-        el = document.createElement("div");
-        el.id = tempId;
-        el.style.display = "none";
-        document.body.appendChild(el);
-      }
-      const fs = new Html5Qrcode(tempId, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.QR_CODE,
-        ],
-        verbose: false,
-      });
-      const decoded = normalizeScannedCode(await fs.scanFile(file, true));
+      const reader = await buildReader();
+      const result = await reader.decodeFromImageUrl(url);
+      const decoded = normalizeScannedCode(result.getText());
       if (!decoded) throw new Error("Código vazio");
       onResultRef.current(decoded);
-      await fs.clear().catch(() => {});
-    } catch (err: any) {
+    } catch {
       setError("Não foi possível ler o código da imagem. Tente outra foto com melhor iluminação e enquadramento.");
+    } finally {
+      URL.revokeObjectURL(url);
     }
   };
 
@@ -166,10 +147,11 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
         </DialogHeader>
 
         <div className="relative shrink-0 rounded-lg overflow-hidden bg-black border border-border/50" style={{ height: 220, maxHeight: "40dvh" }}>
-          <div
-            ref={ref}
-            id="scanner-region"
-            className="absolute inset-0 w-full h-full [&_video]:!w-full [&_video]:!h-full [&_video]:object-cover [&_canvas]:!w-full [&_canvas]:!h-full [&_img]:!w-full [&_img]:!h-full"
+          <video
+            ref={videoRef}
+            className="absolute inset-0 h-full w-full object-cover"
+            muted
+            playsInline
           />
           <div className="pointer-events-none absolute inset-x-[5%] top-1/2 h-px bg-destructive shadow-sm" />
           {!cameraReady && !error && (
