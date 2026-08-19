@@ -323,7 +323,7 @@ function BooksPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead style={{ width: widths.select, minWidth: widths.select }} className="relative">
-                    <Checkbox checked={books.length > 0 && selected.size === books.length} onCheckedChange={toggleAll} />
+                    <Checkbox checked={pageAllSelected} onCheckedChange={toggleAll} />
                     <Resizer onMouseDown={startResize("select")} />
                   </TableHead>
                   {headerCell("capa", "Capa")}
