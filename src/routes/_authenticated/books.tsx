@@ -74,16 +74,45 @@ function BooksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.new]);
 
-  const { data: books = [] } = useQuery({
-    queryKey: ["books-admin", search],
+  const [pageSize, setPageSize] = useState(100);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [search, pageSize]);
+
+  const searchFilter = (q: any) =>
+    search.trim() ? q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`) : q;
+
+  const { data: pageData } = useQuery({
+    queryKey: ["books-admin", search, page, pageSize],
     queryFn: async () => {
-      let q = supabase.from("books").select("*, categories(nome)").order("titulo");
-      if (search.trim()) q = q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`);
-      const { data, error } = await q;
+      const from = (page - 1) * pageSize;
+      let q = supabase.from("books").select("*, categories(nome)", { count: "exact" }).order("titulo");
+      q = searchFilter(q).range(from, from + pageSize - 1);
+      const { data, error, count } = await q;
       if (error) throw error;
-      return data ?? [];
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
+  const books = pageData?.rows ?? [];
+  const total = pageData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const selectAllMatching = async () => {
+    const ids: string[] = [];
+    const CHUNK = 1000;
+    for (let from = 0; ; from += CHUNK) {
+      let q = supabase.from("books").select("id").order("titulo");
+      q = searchFilter(q).range(from, from + CHUNK - 1);
+      const { data, error } = await q;
+      if (error) return toast.error(error.message);
+      const rows = data ?? [];
+      ids.push(...rows.map((r: any) => r.id));
+      if (rows.length < CHUNK) break;
+    }
+    setSelected(new Set(ids));
+    toast.success(`${ids.length} livro(s) selecionado(s)`);
+  };
+
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
@@ -204,18 +233,26 @@ function BooksPage() {
     lastIndexRef.current = index;
     setSelected(next);
   };
+  const pageAllSelected = books.length > 0 && books.every((b: any) => selected.has(b.id));
   const toggleAll = () => {
     lastIndexRef.current = null;
-    if (selected.size === books.length) setSelected(new Set());
-    else setSelected(new Set(books.map((b: any) => b.id)));
+    const next = new Set(selected);
+    if (pageAllSelected) books.forEach((b: any) => next.delete(b.id));
+    else books.forEach((b: any) => next.add(b.id));
+    setSelected(next);
   };
+
 
 
   const bulkDelete = async () => {
     if (selected.size === 0) return;
     if (!confirm(`Excluir ${selected.size} livro(s)?`)) return;
-    const { error } = await supabase.from("books").delete().in("id", Array.from(selected));
-    if (error) return toast.error(error.message);
+    const ids = Array.from(selected);
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await supabase.from("books").delete().in("id", ids.slice(i, i + 200));
+      if (error) return toast.error(error.message);
+    }
+
     toast.success(`${selected.size} livro(s) excluído(s)`);
     setSelected(new Set());
     qc.invalidateQueries({ queryKey: ["books-admin"] });
@@ -275,17 +312,22 @@ function BooksPage() {
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={bulkDelete}><Trash2 className="h-3 w-3 mr-1" />Excluir</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button>
                 </>
               )}
+              <Button size="sm" variant="outline" onClick={selectAllMatching} disabled={total === 0}>
+                Selecionar todos ({total})
+              </Button>
               <Button size="sm" variant="ghost" onClick={resetCols} title="Restaurar larguras das colunas">Reset colunas</Button>
             </div>
           </div>
           <div className="overflow-x-auto">
+
             <Table style={{ tableLayout: "fixed" }}>
               <TableHeader>
                 <TableRow>
                   <TableHead style={{ width: widths.select, minWidth: widths.select }} className="relative">
-                    <Checkbox checked={books.length > 0 && selected.size === books.length} onCheckedChange={toggleAll} />
+                    <Checkbox checked={pageAllSelected} onCheckedChange={toggleAll} />
                     <Resizer onMouseDown={startResize("select")} />
                   </TableHead>
                   {headerCell("capa", "Capa")}
@@ -334,6 +376,31 @@ function BooksPage() {
               </TableBody>
             </Table>
           </div>
+
+          <div className="mt-4 flex items-center justify-between gap-3 flex-wrap border-t border-border/60 pt-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>Linhas por página</span>
+              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                <SelectTrigger className="w-[90px] h-8"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                  <SelectItem value="200">200</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">
+                {total === 0 ? "0 resultados" : `${(page - 1) * pageSize + 1}–${Math.min(page * pageSize, total)} de ${total}`}
+              </span>
+              <Button size="sm" variant="outline" onClick={() => setPage(1)} disabled={page <= 1}>«</Button>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>Anterior</Button>
+              <span className="text-sm">Página {page} de {totalPages}</span>
+              <Button size="sm" variant="outline" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page >= totalPages}>Próxima</Button>
+              <Button size="sm" variant="outline" onClick={() => setPage(totalPages)} disabled={page >= totalPages}>»</Button>
+            </div>
+          </div>
+
         </CardContent>
       </Card>
 
