@@ -74,16 +74,45 @@ function BooksPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.new]);
 
-  const { data: books = [] } = useQuery({
-    queryKey: ["books-admin", search],
+  const [pageSize, setPageSize] = useState(100);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => { setPage(1); }, [search, pageSize]);
+
+  const searchFilter = (q: any) =>
+    search.trim() ? q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`) : q;
+
+  const { data: pageData } = useQuery({
+    queryKey: ["books-admin", search, page, pageSize],
     queryFn: async () => {
-      let q = supabase.from("books").select("*, categories(nome)").order("titulo");
-      if (search.trim()) q = q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`);
-      const { data, error } = await q;
+      const from = (page - 1) * pageSize;
+      let q = supabase.from("books").select("*, categories(nome)", { count: "exact" }).order("titulo");
+      q = searchFilter(q).range(from, from + pageSize - 1);
+      const { data, error, count } = await q;
       if (error) throw error;
-      return data ?? [];
+      return { rows: data ?? [], total: count ?? 0 };
     },
   });
+  const books = pageData?.rows ?? [];
+  const total = pageData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  const selectAllMatching = async () => {
+    const ids: string[] = [];
+    const CHUNK = 1000;
+    for (let from = 0; ; from += CHUNK) {
+      let q = supabase.from("books").select("id").order("titulo");
+      q = searchFilter(q).range(from, from + CHUNK - 1);
+      const { data, error } = await q;
+      if (error) return toast.error(error.message);
+      const rows = data ?? [];
+      ids.push(...rows.map((r: any) => r.id));
+      if (rows.length < CHUNK) break;
+    }
+    setSelected(new Set(ids));
+    toast.success(`${ids.length} livro(s) selecionado(s)`);
+  };
+
 
   const { data: categories = [] } = useQuery({
     queryKey: ["categories"],
