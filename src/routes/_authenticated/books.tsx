@@ -308,12 +308,17 @@ function BooksPage() {
                     </Button>
                   )}
                   <Button size="sm" variant="outline" onClick={bulkDelete}><Trash2 className="h-3 w-3 mr-1" />Excluir</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>Limpar seleção</Button>
                 </>
               )}
+              <Button size="sm" variant="outline" onClick={selectAllMatching} disabled={total === 0}>
+                Selecionar todos ({total})
+              </Button>
               <Button size="sm" variant="ghost" onClick={resetCols} title="Restaurar larguras das colunas">Reset colunas</Button>
             </div>
           </div>
           <div className="overflow-x-auto">
+
             <Table style={{ tableLayout: "fixed" }}>
               <TableHeader>
                 <TableRow>
