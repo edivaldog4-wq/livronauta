@@ -247,8 +247,12 @@ function BooksPage() {
   const bulkDelete = async () => {
     if (selected.size === 0) return;
     if (!confirm(`Excluir ${selected.size} livro(s)?`)) return;
-    const { error } = await supabase.from("books").delete().in("id", Array.from(selected));
-    if (error) return toast.error(error.message);
+    const ids = Array.from(selected);
+    for (let i = 0; i < ids.length; i += 200) {
+      const { error } = await supabase.from("books").delete().in("id", ids.slice(i, i + 200));
+      if (error) return toast.error(error.message);
+    }
+
     toast.success(`${selected.size} livro(s) excluído(s)`);
     setSelected(new Set());
     qc.invalidateQueries({ queryKey: ["books-admin"] });
