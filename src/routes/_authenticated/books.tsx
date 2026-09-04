@@ -622,6 +622,31 @@ function BooksPage() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={dupOpen} onOpenChange={(o) => { setDupOpen(o); if (!o) setPending(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>ISBN já cadastrado</DialogTitle>
+            <DialogDescription>
+              Encontramos {dupBooks.length} registro(s) com este ISBN. Você pode continuar e criar outro exemplar, ou cancelar.
+            </DialogDescription>
+          </DialogHeader>
+          <ul className="space-y-2 text-sm">
+            {dupBooks.map((b) => (
+              <li key={b.id} className="rounded-md border p-2">
+                <div className="font-medium">{b.titulo}</div>
+                <div className="text-muted-foreground">{b.autor || "Autor não informado"} · ISBN {b.isbn} · {b.quantidade_total} exemplar(es)</div>
+              </li>
+            ))}
+          </ul>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDupOpen(false); setPending(null); }}>Cancelar</Button>
+            <Button onClick={() => { if (pending) persist(pending.payload, pending.qtd); }}>Ok, cadastrar mesmo assim</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
     </div>
   );
 }
