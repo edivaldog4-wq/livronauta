@@ -134,6 +134,13 @@ function BooksPage() {
   const titleSuggest = useMemo(() => suggestTitle(form.titulo || ""), [form.titulo]);
   const authorSuggest = useMemo(() => suggestAuthor(form.autor || ""), [form.autor]);
 
+  const languages = useMemo(() => {
+    const all = [...DEFAULT_LANGUAGES, ...customLangs];
+    if (form.idioma && !all.includes(form.idioma)) all.push(form.idioma);
+    return Array.from(new Set(all));
+  }, [customLangs, form.idioma]);
+
+
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
   const openNew = () => { setForm(emptyForm); setOpen(true); };
