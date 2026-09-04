@@ -42,9 +42,16 @@ const emptyForm: BookForm = {
   idioma: "", sinopse: "", capa_url: "", quantidade_total: "1", localizacao_prateleira: "", categoria_id: "",
 };
 
+const DEFAULT_LANGUAGES = [
+  "Português (Brasil)", "Português (Portugal)", "Inglês", "Espanhol", "Francês",
+  "Italiano", "Alemão", "Latim", "Grego", "Hebraico",
+];
+const LANG_STORAGE_KEY = "livronauta-idiomas-v1";
+
 const COL_DEFAULTS = {
   select: 36, capa: 64, titulo: 240, autor: 180, categoria: 140, prateleira: 140, qtd: 110, acoes: 110,
 };
+
 
 function BooksPage() {
   const { isStaff } = useAuth();
