@@ -443,7 +443,24 @@ function BooksPage() {
             <div className="space-y-1"><Label>Editora</Label><Input value={form.editora} onChange={(e) => setForm({ ...form, editora: e.target.value })} /></div>
             <div className="space-y-1"><Label>Ano</Label><Input type="number" value={form.ano} onChange={(e) => setForm({ ...form, ano: e.target.value })} /></div>
             <div className="space-y-1"><Label>Páginas</Label><Input type="number" value={form.numero_paginas} onChange={(e) => setForm({ ...form, numero_paginas: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Idioma</Label><Input value={form.idioma} onChange={(e) => setForm({ ...form, idioma: e.target.value })} /></div>
+            <div className="space-y-1">
+              <Label>Idioma</Label>
+              <Select
+                value={form.idioma || "none"}
+                onValueChange={(v) => {
+                  if (v === "__new__") { setNewLangOpen(true); return; }
+                  setForm({ ...form, idioma: v === "none" ? "" : v });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o idioma" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Não informado —</SelectItem>
+                  {languages.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  <SelectItem value="__new__">+ Cadastrar novo idioma…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-1">
               <Label>Categoria</Label>
               <Select value={form.categoria_id || "none"} onValueChange={(v) => setForm({ ...form, categoria_id: v === "none" ? "" : v })}>
