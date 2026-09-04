@@ -67,6 +67,29 @@ function BooksPage() {
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [customLangs, setCustomLangs] = useState<string[]>([]);
+  const [newLangOpen, setNewLangOpen] = useState(false);
+  const [newLang, setNewLang] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LANG_STORAGE_KEY);
+      if (raw) setCustomLangs(JSON.parse(raw));
+    } catch { /* ignora */ }
+  }, []);
+
+  const saveNewLang = () => {
+    const name = newLang.trim();
+    if (!name) return toast.error("Informe o nome do idioma");
+    const next = Array.from(new Set([...customLangs, name]));
+    setCustomLangs(next);
+    try { localStorage.setItem(LANG_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignora */ }
+    setForm((f) => ({ ...f, idioma: name }));
+    setNewLang("");
+    setNewLangOpen(false);
+    toast.success("Idioma cadastrado");
+  };
+
   const importIsbn = useServerFn(fetchBookByIsbn);
   const { widths, startResize, reset: resetCols } = useResizableColumns("books-cols-v1", COL_DEFAULTS);
   const navigate = useNavigate();
