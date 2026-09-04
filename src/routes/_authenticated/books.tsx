@@ -42,9 +42,16 @@ const emptyForm: BookForm = {
   idioma: "", sinopse: "", capa_url: "", quantidade_total: "1", localizacao_prateleira: "", categoria_id: "",
 };
 
+const DEFAULT_LANGUAGES = [
+  "Português (Brasil)", "Português (Portugal)", "Inglês", "Espanhol", "Francês",
+  "Italiano", "Alemão", "Latim", "Grego", "Hebraico",
+];
+const LANG_STORAGE_KEY = "livronauta-idiomas-v1";
+
 const COL_DEFAULTS = {
   select: 36, capa: 64, titulo: 240, autor: 180, categoria: 140, prateleira: 140, qtd: 110, acoes: 110,
 };
+
 
 function BooksPage() {
   const { isStaff } = useAuth();
@@ -60,6 +67,29 @@ function BooksPage() {
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeTargetId, setMergeTargetId] = useState<string>("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [customLangs, setCustomLangs] = useState<string[]>([]);
+  const [newLangOpen, setNewLangOpen] = useState(false);
+  const [newLang, setNewLang] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(LANG_STORAGE_KEY);
+      if (raw) setCustomLangs(JSON.parse(raw));
+    } catch { /* ignora */ }
+  }, []);
+
+  const saveNewLang = () => {
+    const name = newLang.trim();
+    if (!name) return toast.error("Informe o nome do idioma");
+    const next = Array.from(new Set([...customLangs, name]));
+    setCustomLangs(next);
+    try { localStorage.setItem(LANG_STORAGE_KEY, JSON.stringify(next)); } catch { /* ignora */ }
+    setForm((f) => ({ ...f, idioma: name }));
+    setNewLang("");
+    setNewLangOpen(false);
+    toast.success("Idioma cadastrado");
+  };
+
   const importIsbn = useServerFn(fetchBookByIsbn);
   const { widths, startResize, reset: resetCols } = useResizableColumns("books-cols-v1", COL_DEFAULTS);
   const navigate = useNavigate();
@@ -126,6 +156,13 @@ function BooksPage() {
 
   const titleSuggest = useMemo(() => suggestTitle(form.titulo || ""), [form.titulo]);
   const authorSuggest = useMemo(() => suggestAuthor(form.autor || ""), [form.autor]);
+
+  const languages = useMemo(() => {
+    const all = [...DEFAULT_LANGUAGES, ...customLangs];
+    if (form.idioma && !all.includes(form.idioma)) all.push(form.idioma);
+    return Array.from(new Set(all));
+  }, [customLangs, form.idioma]);
+
 
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
@@ -443,7 +480,24 @@ function BooksPage() {
             <div className="space-y-1"><Label>Editora</Label><Input value={form.editora} onChange={(e) => setForm({ ...form, editora: e.target.value })} /></div>
             <div className="space-y-1"><Label>Ano</Label><Input type="number" value={form.ano} onChange={(e) => setForm({ ...form, ano: e.target.value })} /></div>
             <div className="space-y-1"><Label>Páginas</Label><Input type="number" value={form.numero_paginas} onChange={(e) => setForm({ ...form, numero_paginas: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Idioma</Label><Input value={form.idioma} onChange={(e) => setForm({ ...form, idioma: e.target.value })} /></div>
+            <div className="space-y-1">
+              <Label>Idioma</Label>
+              <Select
+                value={form.idioma || "none"}
+                onValueChange={(v) => {
+                  if (v === "__new__") { setNewLangOpen(true); return; }
+                  setForm({ ...form, idioma: v === "none" ? "" : v });
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder="Selecione o idioma" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">— Não informado —</SelectItem>
+                  {languages.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                  <SelectItem value="__new__">+ Cadastrar novo idioma…</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-1">
               <Label>Categoria</Label>
               <Select value={form.categoria_id || "none"} onValueChange={(v) => setForm({ ...form, categoria_id: v === "none" ? "" : v })}>
@@ -510,6 +564,30 @@ function BooksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newLangOpen} onOpenChange={setNewLangOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Novo idioma</DialogTitle>
+            <DialogDescription>Cadastre um idioma para usar nos livros.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label>Nome do idioma</Label>
+            <Input
+              value={newLang}
+              autoFocus
+              onChange={(e) => setNewLang(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveNewLang(); }}
+              placeholder="Ex.: Japonês"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewLangOpen(false)}>Cancelar</Button>
+            <Button onClick={saveNewLang}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
