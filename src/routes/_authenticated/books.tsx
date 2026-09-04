@@ -70,6 +70,10 @@ function BooksPage() {
   const [customLangs, setCustomLangs] = useState<string[]>([]);
   const [newLangOpen, setNewLangOpen] = useState(false);
   const [newLang, setNewLang] = useState("");
+  const [dupOpen, setDupOpen] = useState(false);
+  const [dupBooks, setDupBooks] = useState<any[]>([]);
+  const [pending, setPending] = useState<{ payload: any; qtd: number } | null>(null);
+
 
   useEffect(() => {
     try {
@@ -211,8 +215,7 @@ function BooksPage() {
     importByIsbn(code);
   };
 
-  const handleSave = async () => {
-    if (!form.titulo.trim()) return toast.error("Título obrigatório");
+  const buildPayload = () => {
     const qtd = Math.max(1, parseInt(form.quantidade_total) || 1);
     const payload: any = {
       titulo: form.titulo.trim(),
@@ -228,20 +231,51 @@ function BooksPage() {
       categoria_id: form.categoria_id || null,
       quantidade_total: qtd,
     };
+    return { payload, qtd };
+  };
+
+  const persist = async (payload: any, qtd: number) => {
     if (form.id) {
       const { error } = await supabase.from("books").update(payload).eq("id", form.id);
       if (error) return toast.error(error.message);
       toast.success("Livro atualizado");
     } else {
-      payload.quantidade_disponivel = qtd;
-      const { error } = await supabase.from("books").insert(payload);
+      const { error } = await supabase.from("books").insert({ ...payload, quantidade_disponivel: qtd });
       if (error) return toast.error(error.message);
       toast.success("Livro cadastrado");
     }
     setOpen(false);
+    setDupOpen(false);
+    setPending(null);
     qc.invalidateQueries({ queryKey: ["books-admin"] });
     qc.invalidateQueries({ queryKey: ["books-catalog"] });
   };
+
+  const handleSave = async () => {
+    if (!form.titulo.trim()) return toast.error("Título obrigatório");
+    const { payload, qtd } = buildPayload();
+
+    const raw = form.isbn.trim();
+    const clean = raw.replace(/[^0-9Xx]/g, "").toUpperCase();
+    if (clean.length >= 10) {
+      const variants = Array.from(new Set([raw, clean]));
+      let q = supabase
+        .from("books")
+        .select("id, titulo, autor, isbn, quantidade_total")
+        .or(variants.map((v) => `isbn.eq.${v}`).join(","))
+        .limit(5);
+      if (form.id) q = q.neq("id", form.id);
+      const { data, error } = await q;
+      if (!error && data && data.length > 0) {
+        setDupBooks(data as any[]);
+        setPending({ payload, qtd });
+        setDupOpen(true);
+        return;
+      }
+    }
+    await persist(payload, qtd);
+  };
+
 
   const handleDelete = async (id: string) => {
     if (!confirm("Excluir este livro?")) return;
