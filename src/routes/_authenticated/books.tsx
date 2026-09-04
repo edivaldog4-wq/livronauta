@@ -564,6 +564,30 @@ function BooksPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={newLangOpen} onOpenChange={setNewLangOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Novo idioma</DialogTitle>
+            <DialogDescription>Cadastre um idioma para usar nos livros.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1">
+            <Label>Nome do idioma</Label>
+            <Input
+              value={newLang}
+              autoFocus
+              onChange={(e) => setNewLang(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") saveNewLang(); }}
+              placeholder="Ex.: Japonês"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewLangOpen(false)}>Cancelar</Button>
+            <Button onClick={saveNewLang}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }
