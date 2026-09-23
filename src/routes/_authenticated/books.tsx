@@ -25,7 +25,16 @@ import { useResizableColumns, Resizer } from "@/lib/use-resizable-columns";
 import { suggestTitle, suggestAuthor } from "@/lib/text-suggest";
 
 export const Route = createFileRoute("/_authenticated/books")({
-  head: () => ({ meta: [{ title: "Acervo — Biblioteca" }] }),
+  head: () => ({
+    meta: [
+      { title: "Acervo — Livronauta" },
+      { name: "description", content: "Gerencie, pesquise e atualize os livros do acervo." },
+      { property: "og:title", content: "Acervo — Livronauta" },
+      { property: "og:description", content: "Gerencie, pesquise e atualize os livros do acervo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({ new: s.new ? 1 : undefined }) as { new?: 1 },
   component: BooksPage,
 });
@@ -47,6 +56,15 @@ const DEFAULT_LANGUAGES = [
   "Italiano", "Alemão", "Latim", "Grego", "Hebraico",
 ];
 const LANG_STORAGE_KEY = "livronauta-idiomas-v1";
+
+function normalizeSearchTerm(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("pt-BR")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 const COL_DEFAULTS = {
   select: 36, capa: 64, titulo: 240, autor: 180, categoria: 140, prateleira: 140, qtd: 110, acoes: 110,
@@ -113,8 +131,17 @@ function BooksPage() {
 
   useEffect(() => { setPage(1); }, [search, pageSize]);
 
-  const searchFilter = (q: any) =>
-    search.trim() ? q.or(`titulo.ilike.%${search}%,autor.ilike.%${search}%,isbn.ilike.%${search}%`) : q;
+  const searchFilter = (q: any) => {
+    const normalized = normalizeSearchTerm(search);
+    if (!normalized) return q;
+    const isbnTerm = search.replace(/\D/g, "");
+    const filters = [
+      `titulo_busca.ilike.%${normalized}%`,
+      `autor_busca.ilike.%${normalized}%`,
+    ];
+    if (isbnTerm) filters.push(`isbn.ilike.%${isbnTerm}%`);
+    return q.or(filters.join(","));
+  };
 
   const { data: pageData } = useQuery({
     queryKey: ["books-admin", search, page, pageSize],
@@ -476,7 +503,15 @@ function BooksPage() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent
+          className="max-h-[92dvh] w-[calc(100%-1.5rem)] max-w-2xl overflow-y-auto p-4 sm:p-6"
+          onEscapeKeyDown={(event) => {
+            if (form.titulo.trim() || form.isbn.trim()) event.preventDefault();
+          }}
+          onInteractOutside={(event) => {
+            if (form.titulo.trim() || form.isbn.trim()) event.preventDefault();
+          }}
+        >
           <DialogHeader><DialogTitle>{form.id ? "Editar Livro" : "Novo Livro"}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="md:col-span-2 flex gap-2 items-end flex-wrap">
@@ -556,9 +591,9 @@ function BooksPage() {
             <div className="md:col-span-2 space-y-1"><Label>URL da Capa</Label><Input value={form.capa_url} onChange={(e) => setForm({ ...form, capa_url: e.target.value })} /></div>
             <div className="md:col-span-2 space-y-1"><Label>Sinopse</Label><Textarea lang="pt-BR" spellCheck rows={3} value={form.sinopse} onChange={(e) => setForm({ ...form, sinopse: e.target.value })} /></div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={handleSave}>Salvar</Button>
+          <DialogFooter className="mt-3 gap-3 border-t pt-4 sm:gap-2">
+            <Button className="h-12 w-full sm:h-10 sm:w-auto" onClick={handleSave}>Salvar livro</Button>
+            <Button className="h-11 w-full sm:h-10 sm:w-auto" variant="ghost" onClick={() => setOpen(false)}>Cancelar e voltar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

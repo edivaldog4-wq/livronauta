@@ -54,6 +54,7 @@ export type Database = {
         Row: {
           ano: number | null
           autor: string
+          autor_busca: string | null
           capa_url: string | null
           categoria_id: string | null
           created_at: string
@@ -67,11 +68,13 @@ export type Database = {
           quantidade_total: number
           sinopse: string | null
           titulo: string
+          titulo_busca: string | null
           updated_at: string
         }
         Insert: {
           ano?: number | null
           autor?: string
+          autor_busca?: string | null
           capa_url?: string | null
           categoria_id?: string | null
           created_at?: string
@@ -85,11 +88,13 @@ export type Database = {
           quantidade_total?: number
           sinopse?: string | null
           titulo: string
+          titulo_busca?: string | null
           updated_at?: string
         }
         Update: {
           ano?: number | null
           autor?: string
+          autor_busca?: string | null
           capa_url?: string | null
           categoria_id?: string | null
           created_at?: string
@@ -103,6 +108,7 @@ export type Database = {
           quantidade_total?: number
           sinopse?: string | null
           titulo?: string
+          titulo_busca?: string | null
           updated_at?: string
         }
         Relationships: [
