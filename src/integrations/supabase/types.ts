@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           diff: Json | null
           id: string
+          library_id: string
           operation: string
           row_id: string | null
           summary: string | null
@@ -32,6 +33,7 @@ export type Database = {
           created_at?: string
           diff?: Json | null
           id?: string
+          library_id?: string
           operation: string
           row_id?: string | null
           summary?: string | null
@@ -43,12 +45,21 @@ export type Database = {
           created_at?: string
           diff?: Json | null
           id?: string
+          library_id?: string
           operation?: string
           row_id?: string | null
           summary?: string | null
           table_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       books: {
         Row: {
@@ -62,6 +73,7 @@ export type Database = {
           id: string
           idioma: string | null
           isbn: string | null
+          library_id: string
           localizacao_prateleira: string | null
           numero_paginas: number | null
           quantidade_disponivel: number
@@ -82,6 +94,7 @@ export type Database = {
           id?: string
           idioma?: string | null
           isbn?: string | null
+          library_id?: string
           localizacao_prateleira?: string | null
           numero_paginas?: number | null
           quantidade_disponivel?: number
@@ -102,6 +115,7 @@ export type Database = {
           id?: string
           idioma?: string | null
           isbn?: string | null
+          library_id?: string
           localizacao_prateleira?: string | null
           numero_paginas?: number | null
           quantidade_disponivel?: number
@@ -119,6 +133,13 @@ export type Database = {
             referencedRelation: "categories"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "books_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -126,21 +147,32 @@ export type Database = {
           created_at: string
           descricao: string | null
           id: string
+          library_id: string
           nome: string
         }
         Insert: {
           created_at?: string
           descricao?: string | null
           id?: string
+          library_id?: string
           nome: string
         }
         Update: {
           created_at?: string
           descricao?: string | null
           id?: string
+          library_id?: string
           nome?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "categories_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       import_logs: {
         Row: {
@@ -152,6 +184,7 @@ export type Database = {
           filename: string | null
           id: string
           imported: number
+          library_id: string
           merged: number
           selected_rows: number
           skipped: number
@@ -167,6 +200,7 @@ export type Database = {
           filename?: string | null
           id?: string
           imported?: number
+          library_id?: string
           merged?: number
           selected_rows?: number
           skipped?: number
@@ -182,13 +216,22 @@ export type Database = {
           filename?: string | null
           id?: string
           imported?: number
+          library_id?: string
           merged?: number
           selected_rows?: number
           skipped?: number
           total_rows?: number
           updated?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "import_logs_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       labels: {
         Row: {
@@ -196,18 +239,21 @@ export type Database = {
           codigo_barras: string | null
           data_geracao: string
           id: string
+          library_id: string
         }
         Insert: {
           book_id: string
           codigo_barras?: string | null
           data_geracao?: string
           id?: string
+          library_id?: string
         }
         Update: {
           book_id?: string
           codigo_barras?: string | null
           data_geracao?: string
           id?: string
+          library_id?: string
         }
         Relationships: [
           {
@@ -217,7 +263,53 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "labels_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      libraries: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
+          created_at: string
+          current_period_end: string | null
+          id: string
+          invite_code: string
+          nome: string
+          owner_id: string | null
+          plan: string
+          subscription_status: string | null
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          invite_code?: string
+          nome: string
+          owner_id?: string | null
+          plan?: string
+          subscription_status?: string | null
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          id?: string
+          invite_code?: string
+          nome?: string
+          owner_id?: string | null
+          plan?: string
+          subscription_status?: string | null
+        }
+        Relationships: []
       }
       loan_requests: {
         Row: {
@@ -226,6 +318,7 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           id: string
+          library_id: string
           observacao: string | null
           status: string
           user_id: string
@@ -236,6 +329,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           id?: string
+          library_id?: string
           observacao?: string | null
           status?: string
           user_id: string
@@ -246,6 +340,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           id?: string
+          library_id?: string
           observacao?: string | null
           status?: string
           user_id?: string
@@ -256,6 +351,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_requests_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
             referencedColumns: ["id"]
           },
           {
@@ -277,6 +379,7 @@ export type Database = {
           devolucao_condicao: string | null
           devolucao_observacao: string | null
           id: string
+          library_id: string
           multa: number | null
           status: Database["public"]["Enums"]["loan_status"]
           user_id: string
@@ -290,6 +393,7 @@ export type Database = {
           devolucao_condicao?: string | null
           devolucao_observacao?: string | null
           id?: string
+          library_id?: string
           multa?: number | null
           status?: Database["public"]["Enums"]["loan_status"]
           user_id: string
@@ -303,6 +407,7 @@ export type Database = {
           devolucao_condicao?: string | null
           devolucao_observacao?: string | null
           id?: string
+          library_id?: string
           multa?: number | null
           status?: Database["public"]["Enums"]["loan_status"]
           user_id?: string
@@ -316,6 +421,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "loans_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "loans_user_id_profiles_fkey"
             columns: ["user_id"]
             isOneToOne: false
@@ -326,6 +438,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_library_id: string | null
           created_at: string
           data_cadastro: string
           email: string
@@ -337,6 +450,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_library_id?: string | null
           created_at?: string
           data_cadastro?: string
           email?: string
@@ -348,6 +462,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_library_id?: string | null
           created_at?: string
           data_cadastro?: string
           email?: string
@@ -358,13 +473,22 @@ export type Database = {
           telefone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_library_id_fkey"
+            columns: ["active_library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reservations: {
         Row: {
           book_id: string
           data_reserva: string
           id: string
+          library_id: string
           status: Database["public"]["Enums"]["reservation_status"]
           user_id: string
         }
@@ -372,6 +496,7 @@ export type Database = {
           book_id: string
           data_reserva?: string
           id?: string
+          library_id?: string
           status?: Database["public"]["Enums"]["reservation_status"]
           user_id: string
         }
@@ -379,6 +504,7 @@ export type Database = {
           book_id?: string
           data_reserva?: string
           id?: string
+          library_id?: string
           status?: Database["public"]["Enums"]["reservation_status"]
           user_id?: string
         }
@@ -388,6 +514,13 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reservations_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
             referencedColumns: ["id"]
           },
           {
@@ -402,26 +535,38 @@ export type Database = {
       settings: {
         Row: {
           key: string
+          library_id: string
           updated_at: string
           value: Json
         }
         Insert: {
           key: string
+          library_id?: string
           updated_at?: string
           value: Json
         }
         Update: {
           key?: string
+          library_id?: string
           updated_at?: string
           value?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "settings_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       shelves: {
         Row: {
           created_at: string
           descricao: string | null
           id: string
+          library_id: string
           nome: string
           updated_at: string
         }
@@ -429,6 +574,7 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          library_id?: string
           nome: string
           updated_at?: string
         }
@@ -436,31 +582,51 @@ export type Database = {
           created_at?: string
           descricao?: string | null
           id?: string
+          library_id?: string
           nome?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "shelves_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
           created_at: string
           id: string
+          library_id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          library_id?: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          library_id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -474,10 +640,12 @@ export type Database = {
       }
       bootstrap_first_admin: { Args: never; Returns: boolean }
       cancel_loan_request: { Args: { _request_id: string }; Returns: boolean }
+      create_library: { Args: { _nome: string }; Returns: string }
       create_loan: {
         Args: { _book_id: string; _dias?: number; _user_id: string }
         Returns: string
       }
+      current_library_id: { Args: never; Returns: string }
       generate_profile_number: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -487,12 +655,17 @@ export type Database = {
         Returns: boolean
       }
       import_books_batch: { Args: { _items: Json }; Returns: Json }
+      is_library_member: { Args: { _library_id: string }; Returns: boolean }
+      is_member_of_my_library: { Args: { _uid: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      join_library: { Args: { _code: string }; Returns: string }
+      library_usage: { Args: never; Returns: Json }
       merge_books: {
         Args: { _source_id: string; _target_id: string }
         Returns: Json
       }
       normalize_book_text: { Args: { _value: string }; Returns: string }
+      regenerate_invite_code: { Args: never; Returns: string }
       reject_loan_request: { Args: { _request_id: string }; Returns: boolean }
       request_loan: {
         Args: { _book_id: string; _observacao?: string }
@@ -504,6 +677,7 @@ export type Database = {
             Args: { _condicao?: string; _loan_id: string; _observacao?: string }
             Returns: number
           }
+      set_active_library: { Args: { _library_id: string }; Returns: boolean }
       update_loan_due_date: {
         Args: { _loan_id: string; _new_date: string }
         Returns: boolean

@@ -8,6 +8,13 @@
       "when": 1790127108493,
       "tag": "0000_add_accent_insensitive_book_search",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790219867639,
+      "tag": "0001_multi_tenant_libraries",
+      "breakpoints": true
     }
   ]
 }
