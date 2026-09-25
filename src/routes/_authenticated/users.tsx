@@ -52,12 +52,13 @@ function UsersPage() {
   };
 
   const handleDelete = async (uid: string) => {
-    if (uid === me?.id) return toast.error("Você não pode excluir seu próprio perfil");
-    if (!confirm("Excluir este usuário?")) return;
-    const { error } = await supabase.from("profiles").delete().eq("id", uid);
+    if (uid === me?.id) return toast.error("Você não pode remover a si mesmo");
+    if (!confirm("Remover este usuário da biblioteca?")) return;
+    const { error } = await supabase.from("user_roles").delete().eq("user_id", uid);
     if (error) return toast.error(error.message);
-    toast.success("Perfil excluído (a conta de login permanece)");
+    toast.success("Usuário removido da biblioteca");
     qc.invalidateQueries({ queryKey: ["users"] });
+    qc.invalidateQueries({ queryKey: ["all-roles"] });
   };
 
   const updateProfile = async (uid: string, patch: any) => {

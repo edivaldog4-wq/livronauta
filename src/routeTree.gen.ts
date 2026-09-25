@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedPlanRouteImport } from './routes/_authenticated/plan'
 import { Route as AuthenticatedLoansRouteImport } from './routes/_authenticated/loans'
 import { Route as AuthenticatedLabelsRouteImport } from './routes/_authenticated/labels'
 import { Route as AuthenticatedImportsRouteImport } from './routes/_authenticated/imports'
@@ -50,6 +51,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPlanRoute = AuthenticatedPlanRouteImport.update({
+  id: '/plan',
+  path: '/plan',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLoansRoute = AuthenticatedLoansRouteImport.update({
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/imports': typeof AuthenticatedImportsRoute
   '/labels': typeof AuthenticatedLabelsRoute
   '/loans': typeof AuthenticatedLoansRoute
+  '/plan': typeof AuthenticatedPlanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/imports': typeof AuthenticatedImportsRoute
   '/labels': typeof AuthenticatedLabelsRoute
   '/loans': typeof AuthenticatedLoansRoute
+  '/plan': typeof AuthenticatedPlanRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/users': typeof AuthenticatedUsersRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/imports': typeof AuthenticatedImportsRoute
   '/_authenticated/labels': typeof AuthenticatedLabelsRoute
   '/_authenticated/loans': typeof AuthenticatedLoansRoute
+  '/_authenticated/plan': typeof AuthenticatedPlanRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/users': typeof AuthenticatedUsersRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/imports'
     | '/labels'
     | '/loans'
+    | '/plan'
     | '/profile'
     | '/settings'
     | '/users'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/imports'
     | '/labels'
     | '/loans'
+    | '/plan'
     | '/profile'
     | '/settings'
     | '/users'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/imports'
     | '/_authenticated/labels'
     | '/_authenticated/loans'
+    | '/_authenticated/plan'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/_authenticated/users'
@@ -226,6 +238,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/plan': {
+      id: '/_authenticated/plan'
+      path: '/plan'
+      fullPath: '/plan'
+      preLoaderRoute: typeof AuthenticatedPlanRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/loans': {
@@ -288,6 +307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedImportsRoute: typeof AuthenticatedImportsRoute
   AuthenticatedLabelsRoute: typeof AuthenticatedLabelsRoute
   AuthenticatedLoansRoute: typeof AuthenticatedLoansRoute
+  AuthenticatedPlanRoute: typeof AuthenticatedPlanRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedUsersRoute: typeof AuthenticatedUsersRoute
@@ -301,6 +321,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedImportsRoute: AuthenticatedImportsRoute,
   AuthenticatedLabelsRoute: AuthenticatedLabelsRoute,
   AuthenticatedLoansRoute: AuthenticatedLoansRoute,
+  AuthenticatedPlanRoute: AuthenticatedPlanRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedUsersRoute: AuthenticatedUsersRoute,
