@@ -1,5 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload } from "lucide-react";
+import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload, Crown } from "lucide-react";
+import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
+import { toast } from "sonner";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
@@ -21,6 +23,7 @@ const items: NavItem[] = [
   { title: "Auditoria", url: "/audit", icon: History, staff: true },
   { title: "Importações", url: "/imports", icon: Upload, staff: true },
   { title: "Meu Perfil", url: "/profile", icon: UserIcon },
+  { title: "Plano e bibliotecas", url: "/plan", icon: Crown },
   { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
 ];
 
@@ -28,6 +31,8 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isStaff, isAdmin, user, signOut, roles } = useAuth();
   const libraryName = useLibraryName();
+  const { data: usage } = useLibraryUsage();
+  const { data: mine } = useMyLibraries();
   const { isMobile, setOpenMobile } = useSidebar();
   const closeMobileMenu = () => { if (isMobile) setOpenMobile(false); };
 
@@ -90,6 +95,21 @@ export function AppSidebar() {
       <SidebarFooter className="border-t border-sidebar-border">
         {user ? (
           <div className="space-y-2 p-2 group-data-[collapsible=icon]:hidden">
+            {mine && mine.libraries.length > 1 && (
+              <select
+                aria-label="Trocar de biblioteca"
+                className="w-full rounded border border-sidebar-border bg-sidebar px-2 py-1 text-xs text-sidebar-foreground"
+                value={mine.active ?? ""}
+                onChange={(e) => switchLibrary(e.target.value).catch((err) => toast.error(err.message))}
+              >
+                {mine.libraries.map((l) => <option key={l.id} value={l.id}>{l.nome}</option>)}
+              </select>
+            )}
+            {usage?.plan === "free" && (
+              <Link to="/plan" onClick={closeMobileMenu} className="block text-xs text-sidebar-foreground/70 hover:underline">
+                Plano gratuito: {usage.books}/{usage.limit} livros
+              </Link>
+            )}
             <div className="text-xs text-sidebar-foreground/70 truncate">{user.email}</div>
             <div className="text-[10px] uppercase tracking-wide text-sidebar-foreground/50">{roleLabel}</div>
             <Button variant="secondary" size="sm" className="w-full" onClick={signOut}>
