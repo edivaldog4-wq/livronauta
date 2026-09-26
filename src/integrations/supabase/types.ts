@@ -174,6 +174,30 @@ export type Database = {
           },
         ]
       }
+      contact_messages: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          mensagem: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          mensagem: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          mensagem?: string
+          nome?: string
+        }
+        Relationships: []
+      }
       import_logs: {
         Row: {
           actor_email: string | null
@@ -657,6 +681,7 @@ export type Database = {
       import_books_batch: { Args: { _items: Json }; Returns: Json }
       is_library_member: { Args: { _library_id: string }; Returns: boolean }
       is_member_of_my_library: { Args: { _uid: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       join_library: { Args: { _code: string }; Returns: string }
       library_usage: { Args: never; Returns: Json }

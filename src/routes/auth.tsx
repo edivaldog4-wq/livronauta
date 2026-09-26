@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -76,9 +76,12 @@ function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(circle_at_top,var(--accent),var(--background)_42%)] px-4">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center space-y-3">
-          <BrandMark className="mx-auto" />
+          <Link to="/" className="mx-auto"><BrandMark className="h-16 w-16" /></Link>
           <CardTitle className="text-2xl">Livronauta</CardTitle>
           <CardDescription>Sistema de Gestão de Acervo</CardDescription>
+          <div className="rounded-lg border-2 border-primary bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground">
+            Comece grátis — sem dados de cartão ou pagamento
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3 mb-4">
@@ -122,7 +125,7 @@ function AuthPage() {
                   <Input id="password2" type="password" autoComplete="new-password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button type="submit" className="w-full" disabled={busy}>{busy ? "Cadastrando..." : "Criar conta"}</Button>
-                <p className="text-xs text-muted-foreground text-center">Novas contas começam como Membro.</p>
+                <p className="text-xs text-muted-foreground text-center">Sua conta já vem com sua própria biblioteca gratuita.</p>
               </form>
             </TabsContent>
           </Tabs>
