@@ -1,10 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="12" fill="#efa24e"/>
-  <g stroke="#111c2f" stroke-opacity="0.7" fill="none" stroke-width="2.5">
-    <path d="M10 16 C10 10 54 10 54 16" />
-    <path d="M10 52 H54" stroke-opacity="0.6" stroke-width="2"/>
-    <path d="M22 22 V50" stroke-opacity="0.65" stroke-width="2"/>
-    <path d="M42 22 V50" stroke-opacity="0.65" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1323 1189" role="img" aria-label="Logomarca L em placa alaranjada">
+  <defs>
+    <radialGradient id="orange" cx="49%" cy="46%" r="70%">
+      <stop offset="0" stop-color="#ffad0b"/>
+      <stop offset="0.72" stop-color="#ffa000"/>
+      <stop offset="1" stop-color="#f99500"/>
+    </radialGradient>
+    <filter id="blur" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+  </defs>
+  <rect x="214" y="167" width="895" height="877" rx="154" fill="#9b5900" opacity=".5" filter="url(#blur)"/>
+  <rect x="214" y="151" width="895" height="877" rx="154" fill="url(#orange)"/>
+  <g fill="none" stroke="#090909" stroke-width="12" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M364 408v-15c0-52 43-95 95-95h402c53 0 96 43 96 96v14"/>
+    <path d="M348 849h620"/>
+    <path d="M492 849V471"/>
+    <path d="M825 849V471"/>
   </g>
-  <text x="32" y="45" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-weight="700" font-size="34" fill="#111c2f">L</text>
+  <path fill="#080808" d="M538 453h165v17c-30 1-50 5-50 33v178c0 21 6 29 26 30h27c44 0 64-20 70-66h17v83H538v-13c35-3 39-10 39-37V503c0-28-6-33-39-37z"/>
 </svg>
