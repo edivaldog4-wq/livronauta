@@ -40,7 +40,7 @@ const features = [
   { icon: RefreshCw, t: "Empréstimos sem esquecimento", d: "Saiba quem está com cada livro, datas de devolução, multas e solicitações dos leitores." },
   { icon: Tag, t: "Etiquetas profissionais", d: "Imprima etiquetas com código de barras e QR Code em papel A4 ou impressora térmica." },
   { icon: Users, t: "Família, clube ou escola", d: "Convide pessoas com um código. Cada uma vê o catálogo e pede empréstimos." },
-  { icon: Smartphone, t: "No bolso, em qualquer lugar", d: "Funciona no celular, tablet e computador. Consulte seu acervo na livraria antes de comprar." },
+  { icon: Smartphone, t: "No bolso, em qualquer lugar", d: "Funciona no celular, tablet e computador. Consulte seu acervo na livraria antes de comprar. Backups a vontade!" },
 ];
 
 const previewBookDelays = ["delay-0", "delay-75", "delay-150"];
@@ -93,7 +93,7 @@ function Landing() {
             <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("free")}>Criar minha biblioteca grátis</Button>
             <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base"><a href="#planos">Ver planos</a></Button>
           </div>
-          <p className="text-sm text-muted-foreground">Até 100 livros grátis para sempre · Pronto em 1 minuto</p>
+          <p className="text-sm text-muted-foreground">Até 100 livros grátis, para sempre · Pronto em 1 minuto</p>
         </div>
         <Card className="group overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl motion-reduce:transform-none motion-reduce:transition-none">
           <CardContent className="space-y-4 p-6">
@@ -105,9 +105,9 @@ function Landing() {
               </div>
             </div>
             {[
-              ["Dom Casmurro", "Machado de Assis", "Disponível"],
+              ["Crime e Castigo", "Fiódor M. Dostoiévski", "Disponível"],
               ["Grande Sertão: Veredas", "Guimarães Rosa", "Com Ana · devolve 12/10"],
-              ["A Hora da Estrela", "Clarice Lispector", "Disponível"],
+              ["O Rei Lear", "William Shakespeare", "Disponível"],
             ].map(([t, a, s], index) => (
               <div key={t} className={`flex items-center justify-between rounded-md border p-3 transition-all duration-300 group-hover:border-primary/50 group-hover:bg-accent/35 group-hover:shadow-sm motion-reduce:transition-none ${previewBookDelays[index]}`}>
                 <div><div className="text-sm font-medium">{t}</div><div className="text-xs text-muted-foreground">{a}</div></div>
