@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { BookOpen, Check, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -92,7 +92,7 @@ export function PublicSignupDialog({
             {busy ? "Criando sua biblioteca..." : isPro ? "Criar conta e continuar" : "Começar grátis"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
-            Ao continuar, você concorda com os Termos de uso e a Política de privacidade.
+            Ao continuar, você concorda com os <Link to="/termos" className="underline">Termos de uso</Link> e a <Link to="/privacidade" className="underline">Política de privacidade</Link>.
           </p>
         </form>
       </DialogContent>

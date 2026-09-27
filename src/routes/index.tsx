@@ -43,6 +43,8 @@ const features = [
   { icon: Smartphone, t: "No bolso, em qualquer lugar", d: "Funciona no celular, tablet e computador. Consulte seu acervo na livraria antes de comprar." },
 ];
 
+const previewBookDelays = ["delay-0", "delay-75", "delay-150"];
+
 const contactSchema = z.object({
   nome: z.string().trim().min(1, "Informe seu nome").max(100),
   email: z.string().trim().email("E-mail inválido").max(255),
@@ -107,7 +109,7 @@ function Landing() {
               ["Grande Sertão: Veredas", "Guimarães Rosa", "Com Ana · devolve 12/10"],
               ["A Hora da Estrela", "Clarice Lispector", "Disponível"],
             ].map(([t, a, s], index) => (
-              <div key={t} className="flex items-center justify-between rounded-md border p-3 transition-all duration-300 group-hover:border-primary/50 group-hover:bg-accent/35 group-hover:shadow-sm motion-reduce:transition-none" style={{ transitionDelay: `${index * 55}ms` }}>
+              <div key={t} className={`flex items-center justify-between rounded-md border p-3 transition-all duration-300 group-hover:border-primary/50 group-hover:bg-accent/35 group-hover:shadow-sm motion-reduce:transition-none ${previewBookDelays[index]}`}>
                 <div><div className="text-sm font-medium">{t}</div><div className="text-xs text-muted-foreground">{a}</div></div>
                 <span className={`rounded-full px-2 py-0.5 text-xs ${s === "Disponível" ? "bg-accent" : "bg-muted"}`}>{s}</span>
               </div>
