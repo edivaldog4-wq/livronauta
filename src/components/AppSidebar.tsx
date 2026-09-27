@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload, Crown } from "lucide-react";
+import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload, Crown, Mail } from "lucide-react";
 import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
 import { toast } from "sonner";
 import {
@@ -24,6 +24,7 @@ const items: NavItem[] = [
   { title: "Importações", url: "/imports", icon: Upload, staff: true },
   { title: "Meu Perfil", url: "/profile", icon: UserIcon },
   { title: "Plano e bibliotecas", url: "/plan", icon: Crown },
+  { title: "Mensagens", url: "/messages", icon: Mail, adminOnly: true },
   { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
 ];
 
@@ -48,7 +49,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/catalog" className="flex items-center gap-2 px-2 py-3">
-          <BrandMark compact className="bg-sidebar-primary text-sidebar-primary-foreground" />
+          <BrandMark compact />
           <div className="flex flex-col group-data-[collapsible=icon]:hidden min-w-0">
             <span className="text-sm font-semibold text-sidebar-foreground truncate">{libraryName}</span>
             <span className="text-xs text-sidebar-foreground/60">Sistema de Gestão</span>
