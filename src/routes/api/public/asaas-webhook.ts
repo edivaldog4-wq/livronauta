@@ -1,5 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
+import { z } from "zod";
+
+const asaasEventSchema = z.object({
+  event: z.string().max(100),
+  payment: z.object({
+    subscription: z.string().max(100).optional(),
+    dueDate: z.string().max(20).optional(),
+  }).passthrough().optional(),
+  subscription: z.object({ id: z.string().max(100) }).passthrough().optional(),
+}).passthrough();
 
 function safeEq(a: string, b: string) {
   const x = Buffer.from(a), y = Buffer.from(b);
@@ -14,10 +24,12 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         const got = request.headers.get("asaas-access-token") ?? "";
         if (!expected || !safeEq(got, expected)) return new Response("Unauthorized", { status: 401 });
 
-        const body = (await request.json().catch(() => null)) as any;
-        const event: string | undefined = body?.event;
-        const subId: string | undefined = body?.payment?.subscription ?? body?.subscription?.id;
-        if (!event || !subId) return new Response("ignored");
+        const parsed = asaasEventSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) return new Response("Invalid payload", { status: 400 });
+        const body = parsed.data;
+        const event = body.event;
+        const subId = body.payment?.subscription ?? body.subscription?.id;
+        if (!subId) return new Response("ignored");
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: lib } = await supabaseAdmin.from("libraries").select("id, plan").eq("asaas_subscription_id", subId).maybeSingle();
