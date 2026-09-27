@@ -29,6 +29,13 @@
       "when": 1790383990634,
       "tag": "0003_limit_100_contact_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790474741520,
+      "tag": "0004_repair_new_user_onboarding_with_demo",
+      "breakpoints": true
     }
   ]
 }
