@@ -10,25 +10,27 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.dirname(fileURLToPath(import.meta.url));
+const loadServerEnvironment = {
+  name: "livronauta-server-environment",
+  config: (_config: unknown, { mode }: { mode: string }) => {
+    Object.assign(process.env, loadEnv(mode, process.cwd(), ""));
+  },
+};
 
-export default defineConfig(({ mode }) => {
-  const serverEnv = loadEnv(mode, process.cwd(), "");
-  Object.assign(process.env, serverEnv);
-
-  return {
-    tanstackStart: {
-      // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-      // nitro/vite builds from this
-      server: { entry: "server" },
-    },
-    vite: {
-      resolve: {
-        alias: {
-          "entities/lib/decode.js": path.resolve(rootDir, "node_modules/entities/lib/decode.js"),
-          "entities/lib/encode.js": path.resolve(rootDir, "node_modules/entities/lib/encode.js"),
-          entities: path.resolve(rootDir, "node_modules/entities"),
-        },
+export default defineConfig({
+  plugins: [loadServerEnvironment],
+  tanstackStart: {
+    // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
+    // nitro/vite builds from this
+    server: { entry: "server" },
+  },
+  vite: {
+    resolve: {
+      alias: {
+        "entities/lib/decode.js": path.resolve(rootDir, "node_modules/entities/lib/decode.js"),
+        "entities/lib/encode.js": path.resolve(rootDir, "node_modules/entities/lib/encode.js"),
+        entities: path.resolve(rootDir, "node_modules/entities"),
       },
     },
-  };
+  },
 });
