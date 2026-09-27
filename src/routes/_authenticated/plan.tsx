@@ -11,6 +11,36 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
+import { useServerFn } from "@tanstack/react-start";
+import { createAsaasSubscription, cancelAsaasSubscription } from "@/lib/billing.functions";
+
+function UpgradeBox({ pending }: { pending: boolean }) {
+  const createFn = useServerFn(createAsaasSubscription);
+  const [f, setF] = useState({ nome: "", cpfCnpj: "", email: "" });
+  const [busy, setBusy] = useState(false);
+  const go = async () => {
+    setBusy(true);
+    try {
+      const { url } = await createFn({ data: { ...f, cpfCnpj: f.cpfCnpj.replace(/\D/g, "") } });
+      window.open(url, "_blank", "noopener");
+      toast.success("Página de pagamento aberta. O plano é ativado assim que o pagamento for confirmado.");
+    } catch (e: any) { toast.error(e.message); }
+    setBusy(false);
+  };
+  return (
+    <div className="space-y-3 rounded-md border-2 border-primary p-4">
+      <div className="font-semibold">Plano Pro — livros ilimitados por R$ 14,99/mês</div>
+      <p className="text-sm text-muted-foreground">Pix, boleto ou cartão. Cancele quando quiser.</p>
+      {pending && <p className="text-sm font-medium">Há um pagamento aguardando confirmação.</p>}
+      <div className="grid gap-2 sm:grid-cols-3">
+        <Input placeholder="Nome completo" maxLength={100} value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} />
+        <Input placeholder="CPF ou CNPJ" maxLength={18} value={f.cpfCnpj} onChange={(e) => setF({ ...f, cpfCnpj: e.target.value })} />
+        <Input placeholder="E-mail" type="email" maxLength={255} value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} />
+      </div>
+      <Button onClick={go} disabled={busy} className="font-semibold">{busy ? "Gerando cobrança..." : pending ? "Abrir pagamento" : "Fazer upgrade"}</Button>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/plan")({
   head: () => ({
@@ -49,6 +79,12 @@ function PlanPage() {
     toast.success("Biblioteca criada");
     window.location.href = "/dashboard";
   };
+  const cancelFn = useServerFn(cancelAsaasSubscription);
+  const cancel = async () => {
+    if (!confirm("Cancelar a assinatura Pro? A biblioteca volta ao plano gratuito (nada é apagado).")) return;
+    try { await cancelFn(); toast.success("Assinatura cancelada"); qc.invalidateQueries({ queryKey: ["library-usage"] }); }
+    catch (e: any) { toast.error(e.message); }
+  };
   const regen = async () => {
     const { error } = await supabase.rpc("regenerate_invite_code" as any);
     if (error) return toast.error(error.message);
@@ -74,16 +110,23 @@ function PlanPage() {
         <CardContent className="space-y-3">
           {isFree ? (
             <>
-              <div className="text-sm">{usage?.books ?? 0} de {usage?.limit ?? 150} livros usados</div>
+              <div className="text-sm">{usage?.books ?? 0} de {usage?.limit ?? 100} livros usados</div>
               <Progress value={pct} />
-              <div className="rounded-md border p-3 space-y-2">
-                <div className="font-semibold">Plano Pro — livros ilimitados</div>
-                <p className="text-sm text-muted-foreground">Pagamento por Pix, boleto ou cartão. Em breve.</p>
-                <Button disabled>Fazer upgrade</Button>
-              </div>
+              {isAdmin && <UpgradeBox pending={usage?.status === "pending"} />}
             </>
           ) : (
-            <div className="text-sm">{usage?.books ?? 0} livros · sem limite</div>
+            <div className="space-y-2 text-sm">
+              <div>{usage?.books ?? 0} livros · sem limite</div>
+              {usage?.plan === "pro" && (
+                <>
+                  <div>
+                    Status: <b>{usage.status === "active" ? "Ativa" : usage.status === "overdue" ? "Pagamento atrasado (7 dias de carência)" : usage.status}</b>
+                    {usage.period_end && <> · próxima cobrança {new Date(usage.period_end).toLocaleDateString("pt-BR")}</>}
+                  </div>
+                  {isAdmin && <Button variant="outline" size="sm" onClick={cancel}>Cancelar assinatura</Button>}
+                </>
+              )}
+            </div>
           )}
         </CardContent>
       </Card>
