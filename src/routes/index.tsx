@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandMark } from "@/components/BrandMark";
 import { PublicShell, CONTACT_EMAIL } from "@/components/SiteChrome";
+import { PublicSignupDialog, type SignupPlan } from "@/components/PublicSignupDialog";
 
 const TITLE = "Livronauta — Sua biblioteca organizada, grátis para começar";
 const DESC = "Catalogue seus livros com o celular, controle empréstimos e imprima etiquetas. Comece grátis, sem cartão.";
@@ -50,9 +51,27 @@ const contactSchema = z.object({
 
 function Landing() {
   const navigate = useNavigate();
+  const [signupPlan, setSignupPlan] = useState<SignupPlan>("free");
+  const [signupOpen, setSignupOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { if (data.session) navigate({ to: "/dashboard" }); });
+    const selected = new URLSearchParams(window.location.search).get("cadastro");
+    if (selected === "free" || selected === "pro") {
+      setSignupPlan(selected);
+      setSignupOpen(true);
+    }
   }, [navigate]);
+
+  const openSignup = (plan: SignupPlan) => {
+    setSignupPlan(plan);
+    setSignupOpen(true);
+    window.history.replaceState({}, "", `/?cadastro=${plan}`);
+  };
+
+  const changeSignup = (open: boolean) => {
+    setSignupOpen(open);
+    if (!open) window.history.replaceState({}, "", "/");
+  };
 
   return (
     <PublicShell>
@@ -69,15 +88,15 @@ function Landing() {
             O Livronauta transforma estantes bagunçadas em uma biblioteca de verdade: catálogo pesquisável, controle de empréstimos e etiquetas — tudo pelo celular.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg" className="h-12 px-7 text-base font-semibold shadow-lg"><Link to="/auth">Criar minha biblioteca grátis</Link></Button>
+            <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("free")}>Criar minha biblioteca grátis</Button>
             <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base"><a href="#planos">Ver planos</a></Button>
           </div>
           <p className="text-sm text-muted-foreground">Até 100 livros grátis para sempre · Pronto em 1 minuto</p>
         </div>
-        <Card className="shadow-xl">
+        <Card className="group overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl motion-reduce:transform-none motion-reduce:transition-none">
           <CardContent className="space-y-4 p-6">
-            <div className="flex items-center gap-3">
-              <BrandMark />
+            <div className="flex items-center gap-3 transition-transform duration-300 group-hover:translate-x-1 motion-reduce:transform-none">
+              <BrandMark className="transition-transform duration-300 group-hover:rotate-3 group-hover:scale-105 motion-reduce:transform-none" />
               <div>
                 <div className="font-semibold">Minha Biblioteca</div>
                 <div className="text-sm text-muted-foreground">1.186 livros · 12 emprestados</div>
@@ -87,8 +106,8 @@ function Landing() {
               ["Dom Casmurro", "Machado de Assis", "Disponível"],
               ["Grande Sertão: Veredas", "Guimarães Rosa", "Com Ana · devolve 12/10"],
               ["A Hora da Estrela", "Clarice Lispector", "Disponível"],
-            ].map(([t, a, s]) => (
-              <div key={t} className="flex items-center justify-between rounded-md border p-3">
+            ].map(([t, a, s], index) => (
+              <div key={t} className="flex items-center justify-between rounded-md border p-3 transition-all duration-300 group-hover:border-primary/50 group-hover:bg-accent/35 group-hover:shadow-sm motion-reduce:transition-none" style={{ transitionDelay: `${index * 55}ms` }}>
                 <div><div className="text-sm font-medium">{t}</div><div className="text-xs text-muted-foreground">{a}</div></div>
                 <span className={`rounded-full px-2 py-0.5 text-xs ${s === "Disponível" ? "bg-accent" : "bg-muted"}`}>{s}</span>
               </div>
@@ -142,7 +161,7 @@ function Landing() {
             <ul className="flex-1 space-y-2 text-sm">
               {["Até 100 livros, para sempre", "Leitor de código de barras", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
             </ul>
-            <Button asChild variant="outline" className="h-11"><Link to="/auth">Começar grátis</Link></Button>
+            <Button variant="outline" className="h-11" onClick={() => openSignup("free")}>Começar grátis</Button>
           </CardContent></Card>
           <Card className="relative border-2 border-primary shadow-xl"><CardContent className="flex h-full flex-col gap-4 p-6">
             <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"><Sparkles className="h-3 w-3" /> Mais escolhido</span>
@@ -152,13 +171,14 @@ function Landing() {
             <ul className="flex-1 space-y-2 text-sm">
               {["Livros ilimitados", "Importação completa do Libib", "Membros e bibliotecários ilimitados", "Pix, boleto ou cartão · cancele quando quiser"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
             </ul>
-            <Button asChild className="h-11 font-semibold"><Link to="/auth">Testar grátis agora</Link></Button>
+            <Button className="h-11 font-semibold" onClick={() => openSignup("pro")}>Criar conta e assinar</Button>
             <p className="text-center text-xs text-muted-foreground">Sem cartão para começar</p>
           </CardContent></Card>
         </div>
       </section>
 
       <ContactSection />
+      <PublicSignupDialog open={signupOpen} plan={signupPlan} onOpenChange={changeSignup} />
     </PublicShell>
   );
 }

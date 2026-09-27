@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,8 +16,16 @@ import { createAsaasSubscription, cancelAsaasSubscription } from "@/lib/billing.
 
 function UpgradeBox({ pending }: { pending: boolean }) {
   const createFn = useServerFn(createAsaasSubscription);
+  const { user } = useAuth();
   const [f, setF] = useState({ nome: "", cpfCnpj: "", email: "" });
   const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    setF((current) => ({
+      ...current,
+      nome: current.nome || user?.user_metadata?.nome || user?.user_metadata?.full_name || "",
+      email: current.email || user?.email || "",
+    }));
+  }, [user]);
   const go = async () => {
     setBusy(true);
     try {
