@@ -34,7 +34,8 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: user.user_metadata?.onboarding_plan === "pro" ? "/plan" : "/catalog" });
+    const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+    if (!loading && user) navigate({ to: requestedPlan === "pro" ? "/plan" : "/catalog" });
   }, [user, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
