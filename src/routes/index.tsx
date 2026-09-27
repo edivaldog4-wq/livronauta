@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
 
 const features = [
   { icon: ScanBarcode, t: "Cadastro em segundos", d: "Aponte a câmera para o código de barras ou digite o ISBN: capa, autor e editora preenchidos automaticamente." },
-  { icon: FileUp, t: "Traga seu acervo do Libib", d: "Importe sua planilha CSV de uma vez, com detecção inteligente de duplicados." },
+  { icon: FileUp, t: "Traga seu acervo do Libib", d: "Importe sua planilha CSV de uma vez, com detecção inteligente de duplicados e edições em massa." },
   { icon: RefreshCw, t: "Empréstimos sem esquecimento", d: "Saiba quem está com cada livro, datas de devolução, multas e solicitações dos leitores." },
   { icon: Tag, t: "Etiquetas profissionais", d: "Imprima etiquetas com código de barras e QR Code em papel A4 ou impressora térmica." },
   { icon: Users, t: "Família, clube ou escola", d: "Convide pessoas com um código. Cada uma vê o catálogo e pede empréstimos." },
@@ -87,7 +87,7 @@ function Landing() {
             Cada livro no lugar.<br /><span className="text-primary">Nenhum empréstimo perdido.</span>
           </h1>
           <p className="max-w-xl text-lg text-muted-foreground">
-            O Livronauta transforma estantes bagunçadas em uma biblioteca de verdade: catálogo pesquisável, controle de empréstimos e etiquetas — tudo pelo celular.
+            O Livronauta transforma estantes bagunçadas em uma biblioteca de verdade: catálogo pesquisável, controle de empréstimos e etiquetas — tudo pelo navegador.
           </p>
           <div className="flex flex-wrap gap-3">
             <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("free")}>Criar minha biblioteca grátis</Button>
@@ -130,7 +130,7 @@ function Landing() {
           </CardContent></Card>
           <Card className="border-primary shadow-lg"><CardContent className="space-y-3 p-6">
             <div className="text-lg font-semibold">Com o Livronauta</div>
-            {["Cada empréstimo com nome, data e lembrete de devolução", "Consulta pelo celular antes de comprar", "Busca por título, autor ou ISBN em segundos", "Catálogo bonito para compartilhar com quem você quiser"].map((x) => (
+            {["Cada empréstimo com nome, data e lembrete de devolução", "Consulta de acervo pelo celular antes de comprar", "Busca por título, autor ou ISBN em segundos", "Catálogo bonito para compartilhar com quem você quiser"].map((x) => (
               <div key={x} className="flex gap-2 text-sm"><Check className="h-5 w-5 shrink-0 text-primary" />{x}</div>
             ))}
           </CardContent></Card>
@@ -140,7 +140,7 @@ function Landing() {
       {/* Vantagens */}
       <section id="vantagens" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="mb-2 text-center text-3xl font-bold">Tudo o que sua biblioteca precisa</h2>
-        <p className="mb-10 text-center text-muted-foreground">Feito para bibliotecas de casa, clubes do livro, igrejas e escolas.</p>
+        <p className="mb-10 text-center text-muted-foreground">Feito para bibliotecas de casa, clubes de livro, igrejas e escolas.</p>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <Card key={f.t} className="transition-shadow hover:shadow-lg"><CardContent className="space-y-2 p-6">
@@ -161,7 +161,7 @@ function Landing() {
             <div className="text-lg font-semibold">Gratuito</div>
             <div className="text-4xl font-extrabold">R$ 0</div>
             <ul className="flex-1 space-y-2 text-sm">
-              {["Até 100 livros, para sempre", "Leitor de código de barras", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
+              {["Até 100 livros, para sempre", "Leitor de código de barras de ISBN", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
             </ul>
             <Button variant="outline" className="h-11" onClick={() => openSignup("free")}>Começar grátis</Button>
           </CardContent></Card>
