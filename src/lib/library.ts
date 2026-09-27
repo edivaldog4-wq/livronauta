@@ -22,6 +22,8 @@ export interface LibraryUsage {
   status: string | null;
   nome: string;
   invite_code: string | null;
+  period_end?: string | null;
+  has_subscription?: boolean;
 }
 
 export function useLibraryUsage() {
