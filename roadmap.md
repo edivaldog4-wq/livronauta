@@ -1,5 +1,5 @@
 # Roadmap
-- [x] Etapa 1: separar bibliotecas (acervo atual = biblioteca principal, ilimitada)
-- [x] Etapa 2: novo cadastro cria biblioteca própria; convite por código; troca de biblioteca
-- [x] Etapa 3: limite de 150 livros no plano gratuito
-- [ ] Etapa 4: assinatura Pro via Asaas — aguardando preço do plano e chave de API do Asaas
+- [x] Etapas 1–3: bibliotecas separadas, convites, limite gratuito (agora 100 livros)
+- [x] Página inicial, termos, privacidade, contato, logo nova, destaque no login
+- [x] Assinatura Pro R$ 14,99 via Asaas (código pronto)
+- [ ] Ativar Asaas — aguardando chave de API, token do webhook e ambiente
