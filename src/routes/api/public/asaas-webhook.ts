@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         const { data: lib } = await supabaseAdmin.from("libraries").select("id, plan").eq("asaas_subscription_id", subId).maybeSingle();
         if (!lib || lib.plan === "unlimited") return new Response("ok");
 
-        let patch: Record<string, unknown> | null = null;
+        let patch: { plan?: string; subscription_status?: string; current_period_end?: string } | null = null;
         if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
           const due = body.payment?.dueDate ? new Date(body.payment.dueDate) : new Date();
           due.setMonth(due.getMonth() + 1);
