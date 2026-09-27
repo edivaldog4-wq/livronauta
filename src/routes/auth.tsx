@@ -13,7 +13,14 @@ import { BrandMark } from "@/components/BrandMark";
 
 
 export const Route = createFileRoute("/auth")({
-  head: () => ({ meta: [{ title: "Entrar — Livronauta" }] }),
+  head: () => ({ meta: [
+    { title: "Entrar ou criar conta — Livronauta" },
+    { name: "description", content: "Entre no Livronauta ou crie sua biblioteca grátis." },
+    { property: "og:title", content: "Entrar ou criar conta — Livronauta" },
+    { property: "og:description", content: "Entre no Livronauta ou crie sua biblioteca grátis." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AuthPage,
 });
 
@@ -27,7 +34,8 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/catalog" });
+    const requestedPlan = new URLSearchParams(window.location.search).get("plan");
+    if (!loading && user) navigate({ to: requestedPlan === "pro" ? "/plan" : "/catalog" });
   }, [user, loading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
