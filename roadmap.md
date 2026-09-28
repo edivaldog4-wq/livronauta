@@ -7,3 +7,7 @@
 - [x] Cadastro Gratuito e Pro direto na landing, com retomada do pagamento após confirmação
 - [x] Animar a simulação inicial e atualizar o rodapé institucional
 - [ ] Validar uma assinatura real — aguardando o proprietário iniciar um upgrade pela página de planos
+- [ ] Central de ajuda pública e interna
+- [ ] Empréstimo rápido por pesquisa, ISBN e etiquetas do Livronauta
+- [ ] Atalho de importação e renomeação de Auditoria para Histórico
+- [ ] Exclusão completa de conta com prazo de 30 dias
