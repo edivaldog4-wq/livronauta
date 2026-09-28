@@ -1,9 +1,11 @@
 # Ajuda, empréstimo rápido e atalhos de operação
 
 ## Objetivo
+
 Criar uma central de ajuda acessível antes e depois do login, facilitar a importação e o empréstimo de livros e renomear “Auditoria” para “Histórico”.
 
 ## 1. Página Ajuda
+
 - Criar a página pública `/ajuda`, seguindo a identidade visual do Livronauta e funcionando bem no celular.
 - Adicionar acesso à Ajuda no menu da página pública, no rodapé e no menu lateral de usuários conectados.
 - Organizar o conteúdo em busca e perguntas expansíveis, separadas por temas: primeiros passos, planos e cobrança, acervo e importação, usuários e empréstimos, etiquetas, backup, privacidade, segurança e encerramento da conta.
@@ -22,6 +24,7 @@ Criar uma central de ajuda acessível antes e depois do login, facilitar a impor
 - Oferecer links contextuais para Termos de uso, Política de privacidade e contato.
 
 ## 2. Exclusão de conta em 30 dias
+
 - Acrescentar em Configurações uma ação específica para solicitar a exclusão completa da conta, separada da exclusão seletiva de dados já existente.
 - Registrar a solicitação e a data prevista para exclusão, encerrar a sessão e impedir o uso normal enquanto estiver pendente.
 - Permitir cancelar a solicitação dentro dos 30 dias após nova autenticação.
@@ -29,11 +32,13 @@ Criar uma central de ajuda acessível antes e depois do login, facilitar a impor
 - Exibir confirmações claras antes da solicitação e orientar a realização de backup.
 
 ## 3. Atalho para importar acervo
+
 - Adicionar na página “Histórico de importações” um botão destacado “Importar acervo”.
 - O botão abrirá a página “Acervo” com a janela de importação CSV já aberta.
 - Ampliar o controle do endereço da página Acervo para aceitar essa ação sem interferir no atalho existente de “Novo livro”.
 
 ## 4. Empréstimo rápido pelo menu
+
 - Inserir “Empréstimo” logo abaixo de “Novo livro” no menu lateral, visível para administradores e bibliotecários.
 - Abrir uma janela de empréstimo sem exigir a navegação prévia para outra página.
 - Permitir localizar o livro por:
@@ -49,11 +54,13 @@ Criar uma central de ajuda acessível antes e depois do login, facilitar a impor
 - Reaproveitar essa mesma janela na página de Empréstimos para evitar dois fluxos diferentes.
 
 ## 5. Auditoria passa a Histórico
+
 - Criar o endereço autenticado `/historico`, mover para ele a listagem atual de alterações e trocar títulos, descrições, menu e chamadas de “Auditoria” para “Histórico”.
 - Manter `/audit` funcionando como redirecionamento permanente para `/historico`, preservando favoritos antigos.
 - Atualizar o botão de “Últimas modificações” no dashboard para apontar ao novo endereço.
 
 ## 6. Validação
+
 - Conferir permissões: ajuda disponível a todos; empréstimo rápido somente para equipe; histórico somente para equipe; exclusão completa somente pelo titular administrador.
 - Testar importação abrindo diretamente na janela correta.
 - Testar empréstimo por pesquisa, ISBN, QR Code e código de barras gerado pelo Livronauta, confirmando a baixa de disponibilidade e a visualização do comprovante.
@@ -62,6 +69,7 @@ Criar uma central de ajuda acessível antes e depois do login, facilitar a impor
 - Validar os novos endereços, metadados próprios, compilação e controles de segurança.
 
 ## Detalhes técnicos
+
 - Extrair o formulário atual de novo empréstimo para um componente compartilhado e acrescentar a resolução segura `labels.codigo_barras → labels.book_id → books` dentro da biblioteca ativa.
 - Acrescentar o parâmetro de abertura da importação à validação de busca da rota de Acervo.
 - Implementar o ciclo de exclusão com registro protegido por usuário, funções autenticadas e processamento agendado idempotente; nenhuma chave privilegiada será enviada ao navegador.

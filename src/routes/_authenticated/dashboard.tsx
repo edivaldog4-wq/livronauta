@@ -250,7 +250,7 @@ function DashboardPage() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2"><History className="h-5 w-5" />Últimas modificações</CardTitle>
               <Button asChild size="sm" variant="ghost">
-                <Link to="/audit">Ver auditoria completa<ArrowRight className="h-3 w-3 ml-1" /></Link>
+                <Link to="/historico">Ver histórico completo<ArrowRight className="h-3 w-3 ml-1" /></Link>
               </Button>
             </CardHeader>
             <CardContent>

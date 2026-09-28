@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload, Crown, Mail } from "lucide-react";
+import { BookOpen, LayoutDashboard, Library, Users, RefreshCw, Tag, Settings, User as UserIcon, LogOut, PlusCircle, History, Upload, Crown, Mail, CircleHelp, BookUp } from "lucide-react";
 import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
 import { toast } from "sonner";
 import {
@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth-context";
 import { useLibraryName } from "@/lib/library";
 import { BrandMark } from "@/components/BrandMark";
+import { QuickLoanDialog } from "@/components/QuickLoanDialog";
+import { useState } from "react";
 
 interface NavItem { title: string; url: string; icon: any; staff?: boolean; adminOnly?: boolean }
 
@@ -20,15 +22,17 @@ const items: NavItem[] = [
   { title: "Empréstimos", url: "/loans", icon: RefreshCw, staff: true },
   { title: "Etiquetas", url: "/labels", icon: Tag, staff: true },
   { title: "Usuários", url: "/users", icon: Users, staff: true },
-  { title: "Auditoria", url: "/audit", icon: History, staff: true },
+  { title: "Histórico", url: "/historico", icon: History, staff: true },
   { title: "Importações", url: "/imports", icon: Upload, staff: true },
   { title: "Meu Perfil", url: "/profile", icon: UserIcon },
   { title: "Plano e bibliotecas", url: "/plan", icon: Crown },
+  { title: "Ajuda", url: "/ajuda", icon: CircleHelp },
   { title: "Mensagens", url: "/messages", icon: Mail, adminOnly: true },
   { title: "Configurações", url: "/settings", icon: Settings, adminOnly: true },
 ];
 
 export function AppSidebar() {
+  const [loanOpen, setLoanOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isStaff, isAdmin, user, signOut, roles } = useAuth();
   const libraryName = useLibraryName();
@@ -58,7 +62,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         {isStaff && (
-          <div className="px-2 pt-2 group-data-[collapsible=icon]:px-1">
+          <div className="space-y-2 px-2 pt-2 group-data-[collapsible=icon]:px-1">
             <Button
               asChild
               size="sm"
@@ -72,6 +76,17 @@ export function AppSidebar() {
                 <PlusCircle className="h-4 w-4 shrink-0" />
                 <span className="font-semibold group-data-[collapsible=icon]:hidden">Novo livro</span>
               </Link>
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="w-full justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0"
+              onClick={() => { closeMobileMenu(); setLoanOpen(true); }}
+              title="Registrar empréstimo"
+            >
+              <BookUp className="h-4 w-4 shrink-0" />
+              <span className="font-semibold group-data-[collapsible=icon]:hidden">Empréstimo</span>
             </Button>
           </div>
         )}
@@ -125,6 +140,7 @@ export function AppSidebar() {
           </div>
         )}
       </SidebarFooter>
+      <QuickLoanDialog open={loanOpen} onOpenChange={setLoanOpen} />
     </Sidebar>
   );
 }

@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_deletion_requests: {
+        Row: {
+          canceled_at: string | null
+          completed_at: string | null
+          requested_at: string
+          scheduled_for: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          completed_at?: string | null
+          requested_at?: string
+          scheduled_for?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          completed_at?: string | null
+          requested_at?: string
+          scheduled_for?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           actor_email: string | null
@@ -657,12 +681,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      account_deletion_status: { Args: never; Returns: Json }
       admin_exists: { Args: never; Returns: boolean }
       approve_loan_request: {
         Args: { _dias?: number; _request_id: string }
         Returns: string
       }
       bootstrap_first_admin: { Args: never; Returns: boolean }
+      cancel_account_deletion: { Args: never; Returns: boolean }
       cancel_loan_request: { Args: { _request_id: string }; Returns: boolean }
       create_library: { Args: { _nome: string }; Returns: string }
       create_loan: {
@@ -692,6 +718,7 @@ export type Database = {
       normalize_book_text: { Args: { _value: string }; Returns: string }
       regenerate_invite_code: { Args: never; Returns: string }
       reject_loan_request: { Args: { _request_id: string }; Returns: boolean }
+      request_account_deletion: { Args: never; Returns: Json }
       request_loan: {
         Args: { _book_id: string; _observacao?: string }
         Returns: string

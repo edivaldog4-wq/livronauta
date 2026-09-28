@@ -35,7 +35,10 @@ export const Route = createFileRoute("/_authenticated/books")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  validateSearch: (s: Record<string, unknown>) => ({ new: s.new ? 1 : undefined }) as { new?: 1 },
+  validateSearch: (s: Record<string, unknown>) => ({
+    new: s.new ? 1 : undefined,
+    import: s.import ? 1 : undefined,
+  }) as { new?: 1; import?: 1 },
   component: BooksPage,
 });
 
@@ -125,6 +128,14 @@ function BooksPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.new]);
+
+  useEffect(() => {
+    if (searchParams.import) {
+      setCsvOpen(true);
+      navigate({ to: "/books", search: {} as any, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams.import]);
 
   const [pageSize, setPageSize] = useState(100);
   const [page, setPage] = useState(1);

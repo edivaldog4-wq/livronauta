@@ -43,6 +43,13 @@
       "when": 1790474876256,
       "tag": "0005_make_audit_trigger_onboarding_safe",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790555467950,
+      "tag": "0006_account_deletion_requests",
+      "breakpoints": true
     }
   ]
 }

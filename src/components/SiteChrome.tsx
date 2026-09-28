@@ -16,6 +16,7 @@ export function SiteHeader() {
         <nav className="ml-6 hidden items-center gap-5 text-sm text-muted-foreground md:flex">
           <a href="/#vantagens" className="hover:text-foreground">Vantagens</a>
           <a href="/#planos" className="hover:text-foreground">Planos</a>
+          <Link to="/ajuda" className="hover:text-foreground">Ajuda</Link>
           <a href="/#contato" className="hover:text-foreground">Contato</a>
         </nav>
         <div className="ml-auto flex items-center gap-2">
@@ -38,6 +39,7 @@ export function SiteFooter() {
         <div className="flex flex-wrap gap-4 opacity-80">
           <Link to="/termos" className="hover:underline">Termos de uso</Link>
           <Link to="/privacidade" className="hover:underline">Política de privacidade</Link>
+          <Link to="/ajuda" className="hover:underline">Ajuda</Link>
           <a href="/#contato" className="hover:underline">Contato</a>
         </div>
       </div>

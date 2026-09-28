@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BackupSection, DataDeletionSection } from "@/components/BackupSection";
+import { AccountDeletionSection } from "@/components/AccountDeletionSection";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Configurações — Biblioteca" }] }),
@@ -155,6 +156,7 @@ function SettingsPage() {
 
       <BackupSection />
       <DataDeletionSection />
+      <AccountDeletionSection />
     </div>
   );
 }

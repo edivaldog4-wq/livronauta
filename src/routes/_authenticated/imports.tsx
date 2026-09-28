@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -91,13 +91,16 @@ function ImportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Upload className="h-6 w-6 text-primary" /> Histórico de importações
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Cada importação de CSV registrada com o resultado linha por linha, incluindo o motivo de cada falha.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <Upload className="h-6 w-6 text-primary" /> Histórico de importações
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Cada importação de CSV registrada com o resultado linha por linha, incluindo o motivo de cada falha.
+          </p>
+        </div>
+        <Button asChild><Link to="/books" search={{ import: 1 }}><Upload className="mr-2 h-4 w-4" />Importar acervo</Link></Button>
       </div>
 
       <Card>
