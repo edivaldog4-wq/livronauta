@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CircleHelp, Mail } from "lucide-react";
-import { SiteChrome } from "@/components/SiteChrome";
+import { PublicShell } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -35,7 +35,7 @@ const questions = [
 
 function HelpPage() {
   return (
-    <SiteChrome>
+    <PublicShell>
       <main className="bg-background">
         <section className="border-b border-border bg-secondary text-secondary-foreground">
           <div className="mx-auto max-w-4xl px-4 py-12 md:py-16">
@@ -62,6 +62,6 @@ function HelpPage() {
           </div>
         </section>
       </main>
-    </SiteChrome>
+    </PublicShell>
   );
 }
