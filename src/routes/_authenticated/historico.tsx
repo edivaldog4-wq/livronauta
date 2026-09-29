@@ -12,7 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/_authenticated/historico")({
-  head: () => ({ meta: [{ title: "Histórico — Livronauta" }] }),
+  head: () => ({ meta: [
+    { title: "Histórico — Livronauta" },
+    { name: "description", content: "Consulte as alterações feitas na sua biblioteca Livronauta." },
+    { property: "og:title", content: "Histórico — Livronauta" },
+    { property: "og:description", content: "Consulte as alterações feitas na sua biblioteca Livronauta." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AuditPage,
 });
 
