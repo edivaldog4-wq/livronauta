@@ -21,6 +21,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
   const [userId, setUserId] = useState("");
   const [code, setCode] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [locatedBook, setLocatedBook] = useState<any | null>(null);
   const [searching, setSearching] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -36,9 +37,9 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
     queryKey: ["all-profiles"], enabled: open,
     queryFn: async () => (await supabase.from("profiles").select("id, nome, email, numero").order("nome")).data ?? [],
   });
-  const selected = useMemo(() => books.find((book: any) => book.id === bookId), [books, bookId]);
+  const selected = useMemo(() => locatedBook?.id === bookId ? locatedBook : books.find((book: any) => book.id === bookId), [books, bookId, locatedBook]);
 
-  useEffect(() => { if (!open) { setBookId(""); setUserId(""); setCode(""); } }, [open]);
+  useEffect(() => { if (!open) { setBookId(""); setUserId(""); setCode(""); setLocatedBook(null); } }, [open]);
 
   const findCode = async (raw: string) => {
     const value = raw.trim();
@@ -54,9 +55,15 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
         const match = books.find((book: any) => (book.isbn ?? "").replace(/[\s-]/g, "").toUpperCase() === compact);
         id = match?.id ?? "";
       }
-      const book = books.find((item: any) => item.id === id);
+      let book = books.find((item: any) => item.id === id);
+      if (id && !book) {
+        const { data: fetched, error: bookError } = await supabase.from("books").select("id, titulo, autor, isbn, capa_url, quantidade_disponivel").eq("id", id).gt("quantidade_disponivel", 0).maybeSingle();
+        if (bookError) throw bookError;
+        book = fetched;
+      }
       if (!book) return toast.error("Nenhum livro disponível foi encontrado para esse código");
       setBookId(book.id);
+      setLocatedBook(book);
       setCode(value);
       toast.success("Livro localizado");
     } catch (error: any) {
@@ -92,7 +99,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
             </div>
             <div className="space-y-1">
               <Label>Livro disponível</Label>
-              <Combobox value={bookId} onChange={setBookId} placeholder="Selecione o livro" searchPlaceholder="Título, autor ou ISBN…" emptyText="Nenhum livro disponível" options={books.map((book: any) => ({ value: book.id, label: book.titulo, hint: `${book.autor ?? "Autor não informado"} · ${book.quantidade_disponivel} disp.`, keywords: book.isbn ?? "" }))} />
+              <Combobox value={bookId} onChange={(value) => { setBookId(value); setLocatedBook(null); }} placeholder="Selecione o livro" searchPlaceholder="Título, autor ou ISBN…" emptyText="Nenhum livro disponível" options={books.map((book: any) => ({ value: book.id, label: book.titulo, hint: `${book.autor ?? "Autor não informado"} · ${book.quantidade_disponivel} disp.`, keywords: book.isbn ?? "" }))} />
             </div>
             {selected && <div className="flex gap-3 border-l-4 border-primary bg-muted p-3 text-sm">{selected.capa_url && <img src={selected.capa_url} alt="" className="h-20 w-14 shrink-0 object-cover" />}<div><p className="font-semibold">{selected.titulo}</p><p className="text-muted-foreground">{selected.autor || "Autor não informado"}</p>{selected.isbn && <p className="font-mono text-xs text-muted-foreground">ISBN {selected.isbn}</p>}</div></div>}
             <div className="space-y-1">
