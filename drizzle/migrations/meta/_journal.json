@@ -50,6 +50,13 @@
       "when": 1790555467950,
       "tag": "0006_account_deletion_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790727682862,
+      "tag": "0007_reduce_free_book_limit_to_50",
+      "breakpoints": true
     }
   ]
 }
