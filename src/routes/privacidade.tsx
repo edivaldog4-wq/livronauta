@@ -11,7 +11,7 @@ export const Route = createFileRoute("/privacidade")({
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://livronauta.lovable.app/privacidade" }],
+    links: [{ rel: "canonical", href: "https://livronauta.app/privacidade" }],
   }),
   component: () => (
     <PublicShell>

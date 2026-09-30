@@ -118,7 +118,7 @@ function PlanPage() {
         <CardContent className="space-y-3">
           {isFree ? (
             <>
-              <div className="text-sm">{usage?.books ?? 0} de {usage?.limit ?? 100} livros usados</div>
+              <div className="text-sm">{usage?.books ?? 0} de {usage?.limit ?? 50} livros usados</div>
               <Progress value={pct} />
               {isAdmin && <UpgradeBox pending={usage?.status === "pending"} />}
             </>

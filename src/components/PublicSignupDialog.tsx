@@ -65,7 +65,7 @@ export function PublicSignupDialog({
           <DialogDescription>
             {isPro
               ? "Crie sua biblioteca e prossiga para o pagamento seguro de R$ 14,99/mês."
-              : "Até 100 livros, sem cartão e sem pagamento."}
+              : "Até 50 livros, sem cartão e sem pagamento."}
           </DialogDescription>
         </DialogHeader>
 
