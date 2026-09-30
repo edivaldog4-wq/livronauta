@@ -19,13 +19,13 @@ export const Route = createFileRoute("/ajuda")({
 });
 
 const questions = [
-  ["O que ocorre se eu cancelar o plano com mais de 100 livros?", "Seu acervo continua salvo e disponível para consulta e backup. Novos cadastros ficam bloqueados até você reduzir o acervo a 100 livros ou reativar o plano Pro."],
+  ["O que ocorre se eu cancelar o plano com mais de 50 livros?", "Seu acervo continua salvo e disponível para consulta e backup. Novos cadastros ficam bloqueados até você reduzir o acervo a 50 livros ou reativar o plano Pro."],
   ["Caso eu exclua minha conta, algum dado continuará salvo?", "A solicitação pode ser cancelada durante 30 dias. Depois desse prazo, a exclusão é definitiva e remove a conta e as bibliotecas de sua titularidade. Antes de solicitar, faça um backup. Registros necessários para obrigações legais podem ser preservados pelo período exigido em lei."],
   ["Onde meus dados ficam hospedados?", "Os dados são mantidos em infraestrutura de nuvem protegida, com controle de acesso e separação entre bibliotecas. Cada pessoa só acessa as bibliotecas das quais participa."],
   ["Posso fazer backup dos meus dados?", "Sim. Em Configurações, administradores podem exportar um backup completo em JSON e restaurá-lo quando necessário. Também é possível exportar o acervo em CSV."],
   ["O valor do plano muda anualmente?", "Não temos previsão de mudanças constantes, pois nosso modelo de trabalho se baseia em volume de assinaturas, não em elevação de valores anuais. Qualquer alteração futura será comunicada previamente."],
   ["Qual a diferença entre importar acervo e importar backup?", "Importar acervo recebe uma planilha CSV, como a exportada pelo Libib, e cria livros com detecção de duplicados. Importar backup restaura um arquivo JSON completo do Livronauta, incluindo dados relacionados da biblioteca."],
-  ["Existe alguma limitação de cadastro de livros?", "O plano Gratuito permite até 100 registros de livros. O plano Pro não impõe esse limite de acervo. Cada registro pode representar um título ou exemplar, conforme sua organização."],
+  ["Existe alguma limitação de cadastro de livros?", "O plano Gratuito permite até 50 registros de livros. O plano Pro não impõe esse limite de acervo. Cada registro pode representar um título ou exemplar, conforme sua organização."],
   ["Como inserir usuários em meu acervo?", "O administrador encontra o código de convite em Plano e bibliotecas. A outra pessoa cria uma conta, informa esse código e passa a participar da biblioteca como membro."],
   ["Consigo fazer edições em massa?", "Sim. No Acervo, selecione vários livros para alterar categoria, estante e outros campos compatíveis de uma só vez."],
   ["Meus dados podem ser compartilhados com terceiros?", "Não vendemos seus dados pessoais. O tratamento segue a Política de Privacidade e ocorre somente para operar o serviço, cumprir obrigações legais e usar fornecedores essenciais sob proteção contratual."],

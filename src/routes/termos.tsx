@@ -11,7 +11,7 @@ export const Route = createFileRoute("/termos")({
       { property: "og:type", content: "article" },
       { name: "twitter:card", content: "summary" },
     ],
-    links: [{ rel: "canonical", href: "https://livronauta.lovable.app/termos" }],
+    links: [{ rel: "canonical", href: "https://livronauta.app/termos" }],
   }),
   component: () => (
     <PublicShell>
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/termos")({
         <h2>3. Conta e responsabilidades</h2>
         <p>Você é responsável pela veracidade dos dados informados, pela guarda da sua senha e por todo conteúdo cadastrado na sua biblioteca, inclusive dados de pessoas que você convidar.</p>
         <h2>4. Planos e pagamento</h2>
-        <p>O plano Gratuito permite até 100 livros por biblioteca, sem custo. O plano Pro custa R$ 14,99 por mês, cobrado de forma recorrente através do Asaas (Pix, boleto ou cartão). Você pode cancelar a qualquer momento; o acesso Pro permanece até o fim do período pago. Em caso de atraso, há carência de 7 dias antes do retorno aos limites do plano Gratuito. Nenhum dado é apagado por mudança de plano.</p>
+        <p>O plano Gratuito permite até 50 livros por biblioteca, sem custo. O plano Pro custa R$ 14,99 por mês, cobrado de forma recorrente através do Asaas (Pix, boleto ou cartão). Você pode cancelar a qualquer momento; o acesso Pro permanece até o fim do período pago. Em caso de atraso, há carência de 7 dias antes do retorno aos limites do plano Gratuito. Nenhum dado é apagado por mudança de plano.</p>
         <h2>5. Uso aceitável</h2>
         <p>É proibido usar a plataforma para fins ilegais, tentar acessar dados de outras bibliotecas, sobrecarregar o sistema ou violar direitos de terceiros.</p>
         <h2>6. Disponibilidade</h2>

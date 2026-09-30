@@ -16,7 +16,9 @@ import { PublicShell, CONTACT_EMAIL } from "@/components/SiteChrome";
 import { PublicSignupDialog, type SignupPlan } from "@/components/PublicSignupDialog";
 
 const TITLE = "Livronauta — Sua biblioteca organizada, grátis para começar";
-const DESC = "Catalogue seus livros com o celular, controle empréstimos e imprima etiquetas. Comece grátis, sem cartão.";
+const DESC = "Organize até 50 livros grátis, controle empréstimos e imprima etiquetas. Comece sem cartão ou pagamento.";
+const SITE_URL = "https://livronauta.app/";
+const SHARE_IMAGE = "https://livronauta.app/livronauta-social.jpg";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,10 +28,17 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: TITLE },
       { property: "og:description", content: DESC },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://livronauta.lovable.app/" },
+      { property: "og:url", content: SITE_URL },
+      { property: "og:image", content: SHARE_IMAGE },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Livronauta em uma biblioteca organizada" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESC },
+      { name: "twitter:image", content: SHARE_IMAGE },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "canonical", href: "https://livronauta.lovable.app/" }],
+    links: [{ rel: "canonical", href: SITE_URL }],
   }),
   component: Landing,
 });
@@ -93,7 +102,7 @@ function Landing() {
             <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("free")}>Criar minha biblioteca grátis</Button>
             <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base"><a href="#planos">Ver planos</a></Button>
           </div>
-          <p className="text-sm text-muted-foreground">Até 100 livros grátis, para sempre · Pronto em 1 minuto</p>
+          <p className="text-sm text-muted-foreground">Até 50 livros grátis, para sempre · Pronto em 1 minuto</p>
         </div>
         <Card className="group overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl motion-reduce:transform-none motion-reduce:transition-none">
           <CardContent className="space-y-4 p-6">
@@ -141,6 +150,14 @@ function Landing() {
       <section id="vantagens" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="mb-2 text-center text-3xl font-bold">Tudo o que sua biblioteca precisa</h2>
         <p className="mb-10 text-center text-muted-foreground">Feito para bibliotecas de casa, clubes de livro, igrejas e escolas.</p>
+        <img
+          src="/livronauta-social.jpg"
+          alt="Livros organizados e catálogo digital do Livronauta"
+          width={1200}
+          height={630}
+          loading="lazy"
+          className="mb-8 aspect-[1200/630] w-full rounded-lg object-cover shadow-lg"
+        />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
             <Card key={f.t} className="transition-shadow hover:shadow-lg"><CardContent className="space-y-2 p-6">
@@ -161,7 +178,7 @@ function Landing() {
             <div className="text-lg font-semibold">Gratuito</div>
             <div className="text-4xl font-extrabold">R$ 0</div>
             <ul className="flex-1 space-y-2 text-sm">
-              {["Até 100 livros, para sempre", "Leitor de código de barras de ISBN", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
+              {["Até 50 livros, para sempre", "Leitor de código de barras de ISBN", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
             </ul>
             <Button variant="outline" className="h-11" onClick={() => openSignup("free")}>Começar grátis</Button>
           </CardContent></Card>
