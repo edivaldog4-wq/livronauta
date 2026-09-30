@@ -59,7 +59,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
       if (id && !book) {
         const { data: fetched, error: bookError } = await supabase.from("books").select("id, titulo, autor, isbn, capa_url, quantidade_disponivel").eq("id", id).gt("quantidade_disponivel", 0).maybeSingle();
         if (bookError) throw bookError;
-        book = fetched;
+        book = fetched ?? undefined;
       }
       if (!book) return toast.error("Nenhum livro disponível foi encontrado para esse código");
       setBookId(book.id);
