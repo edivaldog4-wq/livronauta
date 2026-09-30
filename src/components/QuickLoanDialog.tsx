@@ -45,7 +45,9 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
     if (!value) return toast.error("Digite ou leia um código");
     setSearching(true);
     try {
-      const { data: label } = await supabase.from("labels").select("book_id").eq("codigo_barras", value).maybeSingle();
+      const { data: labels, error } = await supabase.from("labels").select("book_id").eq("codigo_barras", value).limit(1);
+      if (error) throw error;
+      const label = labels?.[0];
       let id = label?.book_id ?? "";
       if (!id) {
         const compact = value.replace(/[\s-]/g, "").toUpperCase();
@@ -57,6 +59,8 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
       setBookId(book.id);
       setCode(value);
       toast.success("Livro localizado");
+    } catch (error: any) {
+      toast.error(error.message || "Não foi possível pesquisar o código");
     } finally { setSearching(false); }
   };
 
@@ -90,7 +94,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
               <Label>Livro disponível</Label>
               <Combobox value={bookId} onChange={setBookId} placeholder="Selecione o livro" searchPlaceholder="Título, autor ou ISBN…" emptyText="Nenhum livro disponível" options={books.map((book: any) => ({ value: book.id, label: book.titulo, hint: `${book.autor ?? "Autor não informado"} · ${book.quantidade_disponivel} disp.`, keywords: book.isbn ?? "" }))} />
             </div>
-            {selected && <div className="flex gap-3 border-l-4 border-primary bg-muted p-3 text-sm"><div><p className="font-semibold">{selected.titulo}</p><p className="text-muted-foreground">{selected.autor || "Autor não informado"}</p>{selected.isbn && <p className="font-mono text-xs text-muted-foreground">ISBN {selected.isbn}</p>}</div></div>}
+            {selected && <div className="flex gap-3 border-l-4 border-primary bg-muted p-3 text-sm">{selected.capa_url && <img src={selected.capa_url} alt="" className="h-20 w-14 shrink-0 object-cover" />}<div><p className="font-semibold">{selected.titulo}</p><p className="text-muted-foreground">{selected.autor || "Autor não informado"}</p>{selected.isbn && <p className="font-mono text-xs text-muted-foreground">ISBN {selected.isbn}</p>}</div></div>}
             <div className="space-y-1">
               <Label>Usuário da biblioteca</Label>
               <Combobox value={userId} onChange={setUserId} placeholder="Selecione o usuário" searchPlaceholder="Nome, e-mail ou número…" emptyText="Nenhum usuário" options={profiles.map((profile: any) => ({ value: profile.id, label: profile.nome || profile.email, hint: profile.numero ? `Nº ${profile.numero}` : profile.email, keywords: `${profile.email ?? ""} ${profile.numero ?? ""}` }))} />

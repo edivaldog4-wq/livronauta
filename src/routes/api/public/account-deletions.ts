@@ -20,7 +20,10 @@ export const Route = createFileRoute("/api/public/account-deletions")({
       const { error: libraryError } = await supabaseAdmin.from("libraries").delete().eq("owner_id", item.user_id);
       if (libraryError) continue;
       const { error: userError } = await supabaseAdmin.auth.admin.deleteUser(item.user_id);
-      if (!userError) deleted += 1;
+      if (!userError) {
+        await supabaseAdmin.from("account_deletion_requests").delete().eq("user_id", item.user_id);
+        deleted += 1;
+      }
     }
     return Response.json({ processed: deleted });
   } } },
