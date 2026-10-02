@@ -57,6 +57,13 @@
       "when": 1790727682862,
       "tag": "0007_reduce_free_book_limit_to_50",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790899395704,
+      "tag": "0008_configurable_default_loan_duration",
+      "breakpoints": true
     }
   ]
 }

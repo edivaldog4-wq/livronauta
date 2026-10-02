@@ -11,6 +11,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { labelCodeCandidates } from "@/lib/label-code";
 
 interface QuickLoanDialogProps { open: boolean; onOpenChange: (open: boolean) => void }
 
@@ -37,6 +38,11 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
     queryKey: ["all-profiles"], enabled: open,
     queryFn: async () => (await supabase.from("profiles").select("id, nome, email, numero").order("nome")).data ?? [],
   });
+  const { data: settings = [] } = useQuery({
+    queryKey: ["settings"], enabled: open,
+    queryFn: async () => (await supabase.from("settings").select("key, value")).data ?? [],
+  });
+  const loanDays = Math.min(90, Math.max(1, Number(settings.find((setting: any) => setting.key === "prazo_emprestimo_dias")?.value) || 14));
   const selected = useMemo(() => locatedBook?.id === bookId ? locatedBook : books.find((book: any) => book.id === bookId), [books, bookId, locatedBook]);
 
   useEffect(() => { if (!open) { setBookId(""); setUserId(""); setCode(""); setLocatedBook(null); } }, [open]);
@@ -46,7 +52,8 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
     if (!value) return toast.error("Digite ou leia um código");
     setSearching(true);
     try {
-      const { data: labels, error } = await supabase.from("labels").select("book_id").eq("codigo_barras", value).limit(1);
+      const candidates = labelCodeCandidates(value);
+      const { data: labels, error } = await supabase.from("labels").select("book_id").in("codigo_barras", candidates).limit(1);
       if (error) throw error;
       const label = labels?.[0];
       let id = label?.book_id ?? "";
@@ -75,7 +82,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
     if (!bookId || !userId) return toast.error("Selecione o livro e o usuário");
     setSaving(true);
     try {
-      await create({ data: { book_id: bookId, user_id: userId, dias: 14 } });
+      await create({ data: { book_id: bookId, user_id: userId } });
       ["loans", "available-books", "quick-loan-books", "books", "books-admin", "dashboard-stats", "loan-history"].forEach((key) => qc.invalidateQueries({ queryKey: [key] }));
       toast.success("Empréstimo registrado");
       onOpenChange(false);
@@ -106,7 +113,7 @@ export function QuickLoanDialog({ open, onOpenChange }: QuickLoanDialogProps) {
               <Label>Usuário da biblioteca</Label>
               <Combobox value={userId} onChange={setUserId} placeholder="Selecione o usuário" searchPlaceholder="Nome, e-mail ou número…" emptyText="Nenhum usuário" options={profiles.map((profile: any) => ({ value: profile.id, label: profile.nome || profile.email, hint: profile.numero ? `Nº ${profile.numero}` : profile.email, keywords: `${profile.email ?? ""} ${profile.numero ?? ""}` }))} />
             </div>
-            <p className="text-xs text-muted-foreground">Prazo inicial de 14 dias. A data pode ser ajustada na página Empréstimos.</p>
+            <p className="text-xs text-muted-foreground">Prazo padrão de {loanDays} {loanDays === 1 ? "dia" : "dias"}. A data pode ser ajustada na página Empréstimos.</p>
           </div>
           <DialogFooter><Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button><Button onClick={submit} disabled={saving}>{saving ? "Registrando…" : "Registrar empréstimo"}</Button></DialogFooter>
         </DialogContent>

@@ -10,6 +10,6 @@
 - [x] Central de ajuda pública e interna
 - [x] Empréstimo rápido por pesquisa, ISBN e etiquetas do Livronauta
 - [x] Atalho de importação e renomeação de Auditoria para Histórico
-- [ ] Adicionar prazo padrão configurável para empréstimos em todos os fluxos
-- [ ] Corrigir leitura e vínculo de códigos de barras e QR Codes das etiquetas
+- [x] Adicionar prazo padrão configurável para empréstimos em todos os fluxos
+- [x] Corrigir leitura e vínculo de códigos de barras e QR Codes das etiquetas
 - [ ] Ativar execução diária da exclusão após 30 dias — aguardando agendamento externo da rotina protegida

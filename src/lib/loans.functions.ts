@@ -4,12 +4,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const createLoan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ book_id: z.string().uuid(), user_id: z.string().uuid(), dias: z.number().int().min(1).max(90).default(14) }))
+  .inputValidator(z.object({ book_id: z.string().uuid(), user_id: z.string().uuid(), dias: z.number().int().min(1).max(90).optional() }))
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("create_loan", {
       _book_id: data.book_id,
       _user_id: data.user_id,
-      _dias: data.dias,
+      ...(data.dias === undefined ? {} : { _dias: data.dias }),
     });
     if (error) throw new Error(error.message);
     return { id };
@@ -54,11 +54,11 @@ export const requestLoan = createServerFn({ method: "POST" })
 
 export const approveLoanRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ request_id: z.string().uuid(), dias: z.number().int().min(1).max(90).default(14) }))
+  .inputValidator(z.object({ request_id: z.string().uuid(), dias: z.number().int().min(1).max(90).optional() }))
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("approve_loan_request", {
       _request_id: data.request_id,
-      _dias: data.dias,
+      ...(data.dias === undefined ? {} : { _dias: data.dias }),
     });
     if (error) throw new Error(error.message);
     return { loan_id: id };

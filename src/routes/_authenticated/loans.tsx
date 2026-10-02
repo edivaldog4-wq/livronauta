@@ -77,6 +77,10 @@ function LoansPage() {
     const m = settings?.find((s: any) => s.key === "multa_por_dia");
     return m ? Number(m.value) || 0 : 0;
   })();
+  const defaultLoanDays = (() => {
+    const setting = settings?.find((s: any) => s.key === "prazo_emprestimo_dias");
+    return Math.min(90, Math.max(1, Number(setting?.value) || 14));
+  })();
 
   if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
@@ -96,11 +100,11 @@ function LoansPage() {
   const handleCreate = async () => {
     if (!bookId || !userId) return toast.error("Selecione livro e usuário");
     try {
-      const r = await create({ data: { book_id: bookId, user_id: userId, dias: 14 } });
+      const r = await create({ data: { book_id: bookId, user_id: userId } });
       toast.success("Empréstimo registrado");
       const book = books.find((b: any) => b.id === bookId);
       const profile = profiles.find((p: any) => p.id === userId);
-      const due = new Date(); due.setDate(due.getDate() + 14);
+      const due = new Date(); due.setDate(due.getDate() + defaultLoanDays);
       setReceipt({
         libraryName,
         loanCode: r.id.slice(0, 8).toUpperCase(),

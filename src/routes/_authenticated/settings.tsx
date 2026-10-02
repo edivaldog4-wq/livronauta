@@ -22,6 +22,7 @@ function SettingsPage() {
   const { isAdmin } = useAuth();
   const qc = useQueryClient();
   const [multa, setMulta] = useState("1.00");
+  const [loanDays, setLoanDays] = useState("14");
   const [libName, setLibName] = useState("");
   const [newShelf, setNewShelf] = useState("");
 
@@ -38,6 +39,8 @@ function SettingsPage() {
   useEffect(() => {
     const m = settings?.find((s: any) => s.key === "multa_por_dia");
     if (m) setMulta(String(m.value));
+    const d = settings?.find((s: any) => s.key === "prazo_emprestimo_dias");
+    if (d) setLoanDays(String(d.value));
     const l = settings?.find((s: any) => s.key === "library_name");
     if (l) setLibName(typeof l.value === "string" ? l.value : String(l.value));
   }, [settings]);
@@ -50,6 +53,15 @@ function SettingsPage() {
     const { error } = await supabase.from("settings").upsert({ key: "multa_por_dia", value: v as any, updated_at: new Date().toISOString() });
     if (error) return toast.error(error.message);
     toast.success("Multa atualizada");
+    qc.invalidateQueries({ queryKey: ["settings"] });
+  };
+
+  const saveLoanDays = async () => {
+    const days = Number(loanDays);
+    if (!Number.isInteger(days) || days < 1 || days > 90) return toast.error("Informe um prazo entre 1 e 90 dias");
+    const { error } = await supabase.from("settings").upsert({ key: "prazo_emprestimo_dias", value: days as any, updated_at: new Date().toISOString() });
+    if (error) return toast.error(error.message);
+    toast.success("Prazo padrão atualizado");
     qc.invalidateQueries({ queryKey: ["settings"] });
   };
 
@@ -102,6 +114,20 @@ function SettingsPage() {
               <Button onClick={saveLibName}>Salvar</Button>
             </div>
             <p className="text-xs text-muted-foreground">Aparece no menu, dashboard e comprovantes.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">Empréstimos</CardTitle></CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-1">
+            <Label>Prazo padrão do empréstimo (dias)</Label>
+            <div className="flex gap-2">
+              <Input type="number" min="1" max="90" step="1" value={loanDays} onChange={(e) => setLoanDays(e.target.value)} />
+              <Button onClick={saveLoanDays}>Salvar</Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Aplicado aos novos empréstimos e às solicitações aprovadas. Não altera empréstimos existentes.</p>
           </div>
         </CardContent>
       </Card>
