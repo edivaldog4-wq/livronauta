@@ -9,7 +9,7 @@ export const createLoan = createServerFn({ method: "POST" })
     const { data: id, error } = await context.supabase.rpc("create_loan", {
       _book_id: data.book_id,
       _user_id: data.user_id,
-      _dias: data.dias ?? null,
+      ...(data.dias === undefined ? {} : { _dias: data.dias }),
     });
     if (error) throw new Error(error.message);
     return { id };
@@ -58,7 +58,7 @@ export const approveLoanRequest = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { data: id, error } = await context.supabase.rpc("approve_loan_request", {
       _request_id: data.request_id,
-      _dias: data.dias ?? null,
+      ...(data.dias === undefined ? {} : { _dias: data.dias }),
     });
     if (error) throw new Error(error.message);
     return { loan_id: id };
