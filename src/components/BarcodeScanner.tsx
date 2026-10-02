@@ -3,15 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-const SUPPORTED_BARCODE_LENGTHS = new Set([8, 10, 12, 13, 14]);
+import { normalizeLabelCode } from "@/lib/label-code";
 
 function normalizeScannedCode(value: string) {
-  const trimmed = value.trim();
-  const compact = trimmed.replace(/[\s-]/g, "");
-  if (/^\d+$/.test(compact)) return compact;
-  if (/^\d{9}[\dXx]$/.test(compact)) return compact.toUpperCase();
-  return trimmed;
+  return normalizeLabelCode(value);
 }
 
 async function buildReader() {
@@ -131,11 +126,11 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
 
   const submitManual = () => {
     const v = normalizeScannedCode(manual);
-    if (SUPPORTED_BARCODE_LENGTHS.has(v.length)) {
+    if (v.length >= 4 && v.length <= 64) {
       onResultRef.current(v);
       setManual("");
     } else {
-      setError("Digite a sequência completa do código (8, 10, 12, 13 ou 14 caracteres).");
+      setError("Digite o código completo impresso na etiqueta ou o ISBN do livro.");
     }
   };
 
@@ -176,7 +171,7 @@ export function BarcodeScanner({ open, onClose, onResult }: Props) {
             <div className="space-y-1">
               <Label className="text-xs">Digitar código manualmente</Label>
               <div className="flex gap-2">
-                <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="ISBN ou EAN" inputMode="numeric" />
+                <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Etiqueta, ISBN ou EAN" />
                 <Button type="button" onClick={submitManual}>Buscar</Button>
               </div>
             </div>

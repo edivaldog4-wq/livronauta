@@ -157,7 +157,7 @@ function DashboardPage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await approve({ data: { request_id: id, dias: 14 } });
+      await approve({ data: { request_id: id } });
       toast.success("Solicitação aprovada");
       invalidateAll();
     } catch (e: any) { toast.error(e.message); }
