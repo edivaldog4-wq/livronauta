@@ -61,6 +61,10 @@ export const cancelAsaasSubscription = createServerFn({ method: "POST" })
     const { lib, supabaseAdmin } = await adminLibrary(context);
     if (!lib.asaas_subscription_id) throw new Error("Nenhuma assinatura ativa");
     await asaas(`/subscriptions/${lib.asaas_subscription_id}`, { method: "DELETE" });
-    await supabaseAdmin.from("libraries").update({ subscription_status: "canceled", plan: "free" }).eq("id", lib.id);
+    await supabaseAdmin.from("libraries").update({
+      subscription_status: "canceled",
+      plan: lib.free_plan_grandfathered ? "free" : "pro",
+      current_period_end: lib.free_plan_grandfathered ? null : lib.current_period_end,
+    }).eq("id", lib.id);
     return { ok: true };
   });

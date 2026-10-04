@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         if (!subId) return new Response("ignored");
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { data: lib } = await supabaseAdmin.from("libraries").select("id, plan").eq("asaas_subscription_id", subId).maybeSingle();
+        const { data: lib } = await supabaseAdmin.from("libraries").select("id, plan, free_plan_grandfathered").eq("asaas_subscription_id", subId).maybeSingle();
         if (!lib || lib.plan === "unlimited") return new Response("ok");
 
         let patch: { plan?: string; subscription_status?: string; current_period_end?: string } | null = null;
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         } else if (event === "PAYMENT_OVERDUE") {
           patch = { subscription_status: "overdue", current_period_end: body.payment?.dueDate ? new Date(body.payment.dueDate).toISOString() : new Date().toISOString() };
         } else if (event === "SUBSCRIPTION_DELETED" || event === "SUBSCRIPTION_INACTIVATED" || event === "PAYMENT_REFUNDED") {
-          patch = { plan: "free", subscription_status: "canceled" };
+          patch = { plan: lib.free_plan_grandfathered ? "free" : "pro", subscription_status: "canceled" };
         }
         if (patch) await supabaseAdmin.from("libraries").update(patch).eq("id", lib.id);
         return new Response("ok");
