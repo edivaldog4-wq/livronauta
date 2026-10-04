@@ -15,8 +15,8 @@ import { BrandMark } from "@/components/BrandMark";
 import { PublicShell, CONTACT_EMAIL } from "@/components/SiteChrome";
 import { PublicSignupDialog, type SignupPlan } from "@/components/PublicSignupDialog";
 
-const TITLE = "Livronauta — Sua biblioteca organizada, grátis para começar";
-const DESC = "Organize até 50 livros grátis, controle empréstimos e imprima etiquetas. Comece sem cartão ou pagamento.";
+const TITLE = "Livronauta — Sua biblioteca organizada por R$ 14,99/mês";
+const DESC = "Organize livros sem limite, controle empréstimos e imprima etiquetas. Cancele gratuitamente em até 7 dias.";
 const SITE_URL = "https://livronauta.app/";
 const SHARE_IMAGE = "https://livronauta.app/livronauta-social.jpg";
 
@@ -62,13 +62,13 @@ const contactSchema = z.object({
 
 function Landing() {
   const navigate = useNavigate();
-  const [signupPlan, setSignupPlan] = useState<SignupPlan>("free");
+  const [signupPlan, setSignupPlan] = useState<SignupPlan>("pro");
   const [signupOpen, setSignupOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => { if (data.session) navigate({ to: "/dashboard" }); });
     const selected = new URLSearchParams(window.location.search).get("cadastro");
     if (selected === "free" || selected === "pro") {
-      setSignupPlan(selected);
+      setSignupPlan("pro");
       setSignupOpen(true);
     }
   }, [navigate]);
@@ -90,7 +90,7 @@ function Landing() {
       <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 md:grid-cols-[1.2fr_1fr] md:py-24">
         <div className="space-y-6">
           <span className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-card px-3 py-1 text-sm font-medium">
-            <ShieldCheck className="h-4 w-4 text-primary" /> Comece grátis, sem cartão e sem pagamento
+            <ShieldCheck className="h-4 w-4 text-primary" /> Cancele gratuitamente em até 7 dias
           </span>
           <h1 className="text-4xl font-extrabold leading-tight tracking-tight md:text-6xl">
             Cada livro no lugar.<br /><span className="text-primary">Nenhum empréstimo perdido.</span>
@@ -99,10 +99,10 @@ function Landing() {
             O Livronauta transforma estantes bagunçadas em uma biblioteca de verdade: catálogo pesquisável, controle de empréstimos e etiquetas — tudo pelo navegador.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("free")}>Criar minha biblioteca grátis</Button>
-            <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base"><a href="#planos">Ver planos</a></Button>
+            <Button size="lg" className="h-12 px-7 text-base font-semibold shadow-lg" onClick={() => openSignup("pro")}>Criar minha biblioteca</Button>
+            <Button asChild size="lg" variant="outline" className="h-12 px-7 text-base"><a href="#planos">Conhecer o plano</a></Button>
           </div>
-          <p className="text-sm text-muted-foreground">Até 50 livros grátis, para sempre · Pronto em 1 minuto</p>
+          <p className="text-sm text-muted-foreground">Livros ilimitados · R$ 14,99/mês · Pronto em 1 minuto</p>
         </div>
         <Card className="group overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl motion-reduce:transform-none motion-reduce:transition-none">
           <CardContent className="space-y-4 p-6">
@@ -172,26 +172,18 @@ function Landing() {
       {/* Planos */}
       <section id="planos" className="mx-auto max-w-4xl scroll-mt-20 px-4 py-16">
         <h2 className="mb-2 text-center text-3xl font-bold">Um preço que cabe no bolso</h2>
-        <p className="mb-10 text-center text-muted-foreground">Comece grátis, sem dados de cartão. Faça upgrade só se precisar.</p>
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card><CardContent className="flex h-full flex-col gap-4 p-6">
-            <div className="text-lg font-semibold">Gratuito</div>
-            <div className="text-4xl font-extrabold">R$ 0</div>
-            <ul className="flex-1 space-y-2 text-sm">
-              {["Até 50 livros, para sempre", "Leitor de código de barras de ISBN", "Controle de empréstimos", "Etiquetas e QR Code"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
-            </ul>
-            <Button variant="outline" className="h-11" onClick={() => openSignup("free")}>Começar grátis</Button>
-          </CardContent></Card>
+        <p className="mb-10 text-center text-muted-foreground">Todos os recursos, acervo ilimitado e liberdade para cancelar.</p>
+        <div className="mx-auto max-w-lg">
           <Card className="relative border-2 border-primary shadow-xl"><CardContent className="flex h-full flex-col gap-4 p-6">
-            <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"><Sparkles className="h-3 w-3" /> Mais escolhido</span>
+            <span className="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground"><Sparkles className="h-3 w-3" /> Plano completo</span>
             <div className="text-lg font-semibold">Pro</div>
             <div><span className="text-4xl font-extrabold">R$ 14,99</span><span className="text-muted-foreground">/mês</span></div>
             <div className="text-sm font-medium text-primary">Menos de R$ 0,50 por dia</div>
             <ul className="flex-1 space-y-2 text-sm">
-              {["Livros ilimitados", "Importação completa do Libib", "Membros e bibliotecários ilimitados", "Pix, boleto ou cartão · cancele quando quiser"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
+              {["Livros ilimitados", "Importação completa do Libib", "Membros e bibliotecários ilimitados", "Pix, boleto ou cartão", "Cancelamento gratuito em até 7 dias"].map((x) => <li key={x} className="flex gap-2"><Check className="h-4 w-4 text-primary" />{x}</li>)}
             </ul>
             <Button className="h-11 font-semibold" onClick={() => openSignup("pro")}>Criar conta e assinar</Button>
-            <p className="text-center text-xs text-muted-foreground">Sem cartão para começar</p>
+            <p className="text-center text-xs text-muted-foreground">Pagamento seguro · cancele quando quiser</p>
           </CardContent></Card>
         </div>
       </section>

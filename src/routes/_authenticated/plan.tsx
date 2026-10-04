@@ -38,7 +38,7 @@ function UpgradeBox({ pending }: { pending: boolean }) {
   return (
     <div className="space-y-3 rounded-md border-2 border-primary p-4">
       <div className="font-semibold">Plano Pro — livros ilimitados por R$ 14,99/mês</div>
-      <p className="text-sm text-muted-foreground">Pix, boleto ou cartão. Cancele quando quiser.</p>
+      <p className="text-sm text-muted-foreground">Pix, boleto ou cartão. Cancelamento gratuito em até 7 dias; depois, cancele quando quiser.</p>
       {pending && <p className="text-sm font-medium">Há um pagamento aguardando confirmação.</p>}
       <div className="grid gap-2 sm:grid-cols-3">
         <Input placeholder="Nome completo" maxLength={100} value={f.nome} onChange={(e) => setF({ ...f, nome: e.target.value })} />
@@ -64,7 +64,7 @@ export const Route = createFileRoute("/_authenticated/plan")({
   component: PlanPage,
 });
 
-const planLabel: Record<string, string> = { free: "Gratuito", pro: "Pro", unlimited: "Ilimitado" };
+const planLabel: Record<string, string> = { free: "Gratuito legado", pro: "Pro", unlimited: "Ilimitado" };
 
 function PlanPage() {
   const { isAdmin } = useAuth();
@@ -89,7 +89,10 @@ function PlanPage() {
   };
   const cancelFn = useServerFn(cancelAsaasSubscription);
   const cancel = async () => {
-    if (!confirm("Cancelar a assinatura Pro? A biblioteca volta ao plano gratuito (nada é apagado).")) return;
+    const destination = usage?.free_plan_grandfathered
+      ? "Sua biblioteca volta ao plano gratuito legado e nada será apagado."
+      : "Novos cadastros ficarão bloqueados após o fim do acesso, mas nada será apagado."
+    if (!confirm(`Cancelar a assinatura Pro? ${destination}`)) return;
     try { await cancelFn(); toast.success("Assinatura cancelada"); qc.invalidateQueries({ queryKey: ["library-usage"] }); }
     catch (e: any) { toast.error(e.message); }
   };
@@ -99,8 +102,9 @@ function PlanPage() {
     qc.invalidateQueries({ queryKey: ["library-usage"] });
   };
 
-  const isFree = usage?.plan === "free";
-  const pct = usage ? Math.min(100, (usage.books / usage.limit) * 100) : 0;
+  const isFree = usage?.plan === "free" && usage.free_plan_grandfathered;
+  const needsActivation = usage?.plan === "pro" && usage.status !== "active" && usage.status !== "overdue";
+  const pct = usage?.limit ? Math.min(100, (usage.books / usage.limit) * 100) : 0;
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4 max-w-3xl">
@@ -122,10 +126,15 @@ function PlanPage() {
               <Progress value={pct} />
               {isAdmin && <UpgradeBox pending={usage?.status === "pending"} />}
             </>
+          ) : needsActivation ? (
+            <>
+              <p className="text-sm text-muted-foreground">Ative o plano para cadastrar livros e usar todos os recursos. Seu livro de demonstração já está disponível.</p>
+              {isAdmin && <UpgradeBox pending={usage?.status === "pending"} />}
+            </>
           ) : (
             <div className="space-y-2 text-sm">
               <div>{usage?.books ?? 0} livros · sem limite</div>
-              {usage?.plan === "pro" && (
+              {usage?.plan === "pro" && usage.status !== "canceled" && (
                 <>
                   <div>
                     Status: <b>{usage.status === "active" ? "Ativa" : usage.status === "overdue" ? "Pagamento atrasado (7 dias de carência)" : usage.status}</b>

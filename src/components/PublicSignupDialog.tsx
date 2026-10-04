@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { BookOpen, Check, Crown } from "lucide-react";
+import { Check, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 
-export type SignupPlan = "free" | "pro";
+export type SignupPlan = "pro";
 
 export function PublicSignupDialog({
   open,
@@ -22,8 +22,6 @@ export function PublicSignupDialog({
   const navigate = useNavigate();
   const [form, setForm] = useState({ nome: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
-  const isPro = plan === "pro";
-
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (form.password.length < 6) return toast.error("A senha precisa ter no mínimo 6 caracteres.");
@@ -32,7 +30,7 @@ export function PublicSignupDialog({
       email: form.email,
       password: form.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth${isPro ? "?plan=pro" : ""}`,
+        emailRedirectTo: `${window.location.origin}/auth?plan=pro`,
         data: { nome: form.nome, onboarding_plan: plan },
       },
     });
@@ -41,16 +39,11 @@ export function PublicSignupDialog({
 
     if (data.session) {
       toast.success("Conta e biblioteca criadas!");
-      navigate({ to: isPro ? "/plan" : "/dashboard" });
+      navigate({ to: "/plan" });
       return;
     }
 
-    toast.success(
-      isPro
-        ? "Confira seu e-mail. Depois da confirmação, você continuará para o pagamento."
-        : "Confira seu e-mail para confirmar e acessar sua nova biblioteca.",
-      { duration: 7000 },
-    );
+    toast.success("Confira seu e-mail. Depois da confirmação, você continuará para o pagamento.", { duration: 7000 });
     onOpenChange(false);
   };
 
@@ -59,20 +52,17 @@ export function PublicSignupDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <div className="mb-2 flex h-11 w-11 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            {isPro ? <Crown /> : <BookOpen />}
+            <Crown />
           </div>
-          <DialogTitle>{isPro ? "Começar com o plano Pro" : "Criar minha biblioteca grátis"}</DialogTitle>
-          <DialogDescription>
-            {isPro
-              ? "Crie sua biblioteca e prossiga para o pagamento seguro de R$ 14,99/mês."
-              : "Até 50 livros, sem cartão e sem pagamento."}
-          </DialogDescription>
+          <DialogTitle>Começar com o plano Pro</DialogTitle>
+          <DialogDescription>Crie sua biblioteca e prossiga para o pagamento seguro de R$ 14,99/mês. Cancele gratuitamente em até 7 dias.</DialogDescription>
         </DialogHeader>
 
         <div className="rounded-md bg-muted p-3 text-sm">
           <div className="flex items-center gap-2 font-medium"><Check className="text-primary" /> Biblioteca própria pronta para usar</div>
           <div className="mt-1 flex items-center gap-2 font-medium"><Check className="text-primary" /> Exemplos para conhecer o sistema</div>
-          {isPro && <div className="mt-1 flex items-center gap-2 font-medium"><Check className="text-primary" /> Livros ilimitados</div>}
+          <div className="mt-1 flex items-center gap-2 font-medium"><Check className="text-primary" /> Livros ilimitados</div>
+          <div className="mt-1 flex items-center gap-2 font-medium"><Check className="text-primary" /> 7 dias para cancelar gratuitamente</div>
         </div>
 
         <form onSubmit={submit} className="space-y-4">
@@ -89,7 +79,7 @@ export function PublicSignupDialog({
             <Input id="signup-password" type="password" autoComplete="new-password" required minLength={6} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
           </div>
           <Button type="submit" className="h-11 w-full font-semibold" disabled={busy}>
-            {busy ? "Criando sua biblioteca..." : isPro ? "Criar conta e continuar" : "Começar grátis"}
+            {busy ? "Criando sua biblioteca..." : "Criar conta e continuar"}
           </Button>
           <p className="text-center text-xs text-muted-foreground">
             Ao continuar, você concorda com os <Link to="/termos" className="underline">Termos de uso</Link> e a <Link to="/privacidade" className="underline">Política de privacidade</Link>.

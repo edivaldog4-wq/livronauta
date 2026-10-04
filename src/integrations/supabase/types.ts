@@ -326,6 +326,7 @@ export type Database = {
           asaas_subscription_id: string | null
           created_at: string
           current_period_end: string | null
+          free_plan_grandfathered: boolean
           id: string
           invite_code: string
           nome: string
@@ -338,6 +339,7 @@ export type Database = {
           asaas_subscription_id?: string | null
           created_at?: string
           current_period_end?: string | null
+          free_plan_grandfathered?: boolean
           id?: string
           invite_code?: string
           nome: string
@@ -350,6 +352,7 @@ export type Database = {
           asaas_subscription_id?: string | null
           created_at?: string
           current_period_end?: string | null
+          free_plan_grandfathered?: boolean
           id?: string
           invite_code?: string
           nome?: string
