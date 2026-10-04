@@ -15,9 +15,9 @@ import { BrandMark } from "@/components/BrandMark";
 export const Route = createFileRoute("/auth")({
   head: () => ({ meta: [
     { title: "Entrar ou criar conta — Livronauta" },
-    { name: "description", content: "Entre no Livronauta ou crie sua biblioteca grátis." },
+    { name: "description", content: "Entre no Livronauta ou crie sua biblioteca com o plano Pro." },
     { property: "og:title", content: "Entrar ou criar conta — Livronauta" },
-    { property: "og:description", content: "Entre no Livronauta ou crie sua biblioteca grátis." },
+    { property: "og:description", content: "Entre no Livronauta ou crie sua biblioteca com o plano Pro." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -57,12 +57,13 @@ function AuthPage() {
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { nome },
+        data: { nome, onboarding_plan: "pro" },
       },
     });
     setBusy(false);
     if (error) return toast.error("Falha no cadastro: " + error.message);
-    toast.success("Cadastro realizado! Verifique seu email se necessário.");
+    toast.success("Cadastro realizado! Confirme seu e-mail para continuar ao pagamento.");
+    window.history.replaceState({}, "", "/auth?plan=pro");
     setTab("login");
   };
 
@@ -88,7 +89,7 @@ function AuthPage() {
           <CardTitle className="text-2xl">Livronauta</CardTitle>
           <CardDescription>Sistema de Gestão de Acervo</CardDescription>
           <div className="rounded-lg border-2 border-primary bg-accent px-3 py-2 text-sm font-semibold text-accent-foreground">
-            Comece grátis — sem dados de cartão ou pagamento
+            Plano Pro por R$ 14,99/mês · cancelamento gratuito em até 7 dias
           </div>
         </CardHeader>
         <CardContent>
@@ -133,7 +134,7 @@ function AuthPage() {
                   <Input id="password2" type="password" autoComplete="new-password" minLength={6} required value={password} onChange={(e) => setPassword(e.target.value)} />
                 </div>
                 <Button type="submit" className="w-full" disabled={busy}>{busy ? "Cadastrando..." : "Criar conta"}</Button>
-                <p className="text-xs text-muted-foreground text-center">Sua conta já vem com sua própria biblioteca gratuita.</p>
+                <p className="text-xs text-muted-foreground text-center">Sua conta será direcionada ao pagamento seguro do plano Pro.</p>
               </form>
             </TabsContent>
           </Tabs>

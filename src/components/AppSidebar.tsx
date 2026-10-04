@@ -123,7 +123,7 @@ export function AppSidebar() {
             )}
             {usage?.plan === "free" && (
               <Link to="/plan" onClick={closeMobileMenu} className="block text-xs text-sidebar-foreground/70 hover:underline">
-                Plano gratuito: {usage.books}/{usage.limit} livros
+                Plano gratuito legado: {usage.books}/{usage.limit} livros
               </Link>
             )}
             <div className="text-xs text-sidebar-foreground/70 truncate">{user.email}</div>

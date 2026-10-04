@@ -17,7 +17,7 @@ export const Route = createFileRoute("/termos")({
     <PublicShell>
       <article className="mx-auto max-w-3xl space-y-4 px-4 py-12 [&_h2]:mt-6 [&_h2]:text-xl [&_h2]:font-semibold [&_p]:text-muted-foreground">
         <h1 className="text-3xl font-bold">Termos de uso</h1>
-        <p>Última atualização: setembro de 2026.</p>
+        <p>Última atualização: outubro de 2026.</p>
         <h2>1. Aceitação</h2>
         <p>Ao criar uma conta ou usar o Livronauta, você concorda com estes Termos. Se não concordar, não utilize a plataforma.</p>
         <h2>2. O serviço</h2>
@@ -25,7 +25,7 @@ export const Route = createFileRoute("/termos")({
         <h2>3. Conta e responsabilidades</h2>
         <p>Você é responsável pela veracidade dos dados informados, pela guarda da sua senha e por todo conteúdo cadastrado na sua biblioteca, inclusive dados de pessoas que você convidar.</p>
         <h2>4. Planos e pagamento</h2>
-        <p>O plano Gratuito permite até 50 livros por biblioteca, sem custo. O plano Pro custa R$ 14,99 por mês, cobrado de forma recorrente através do Asaas (Pix, boleto ou cartão). Você pode cancelar a qualquer momento; o acesso Pro permanece até o fim do período pago. Em caso de atraso, há carência de 7 dias antes do retorno aos limites do plano Gratuito. Nenhum dado é apagado por mudança de plano.</p>
+        <p>O plano Pro custa R$ 14,99 por mês, cobrado de forma recorrente através do Asaas (Pix, boleto ou cartão), e permite livros ilimitados. A primeira contratação pode ser cancelada gratuitamente em até 7 dias. Depois desse prazo, você pode cancelar a qualquer momento e o acesso permanece até o fim do período pago. O antigo plano Gratuito não aceita novos cadastros; bibliotecas que já o utilizavam mantêm suas condições e o limite de 50 livros. Nenhum dado é apagado por cancelamento ou mudança de plano.</p>
         <h2>5. Uso aceitável</h2>
         <p>É proibido usar a plataforma para fins ilegais, tentar acessar dados de outras bibliotecas, sobrecarregar o sistema ou violar direitos de terceiros.</p>
         <h2>6. Disponibilidade</h2>

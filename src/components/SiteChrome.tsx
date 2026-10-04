@@ -20,7 +20,7 @@ export function SiteHeader() {
           <a href="/#contato" className="hover:text-foreground">Contato</a>
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          <Button asChild variant="ghost" className="hidden sm:inline-flex"><a href="/?cadastro=free">Criar conta grátis</a></Button>
+          <Button asChild variant="ghost" className="hidden sm:inline-flex"><a href="/?cadastro=pro">Criar conta</a></Button>
           <Button asChild className="px-5 font-semibold shadow-md"><Link to="/auth">Entrar</Link></Button>
         </div>
       </div>

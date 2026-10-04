@@ -24,6 +24,7 @@ export interface LibraryUsage {
   invite_code: string | null;
   period_end?: string | null;
   has_subscription?: boolean;
+  free_plan_grandfathered?: boolean;
 }
 
 export function useLibraryUsage() {
