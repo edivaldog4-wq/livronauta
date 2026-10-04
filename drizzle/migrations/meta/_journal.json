@@ -71,6 +71,13 @@
       "when": 1791072930304,
       "tag": "0009_grandfather_existing_free_libraries",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791072987944,
+      "tag": "0010_allow_pending_demo_book",
+      "breakpoints": true
     }
   ]
 }
