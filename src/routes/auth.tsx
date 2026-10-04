@@ -69,7 +69,7 @@ function AuthPage() {
 
   const handleGoogle = async () => {
     setBusy(true);
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: `${window.location.origin}/auth?plan=pro` });
     if (result?.error) {
       setBusy(false);
       toast.error("Falha no login Google: " + (result.error as any).message);
@@ -77,7 +77,7 @@ function AuthPage() {
     }
     if (result?.redirected) return;
     setBusy(false);
-    navigate({ to: "/catalog" });
+    navigate({ to: "/plan" });
   };
 
 

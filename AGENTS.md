@@ -5,4 +5,5 @@
 - Authentication emails use the managed Livronauta template set and the delegated notify.livronauta.app sender domain, keeping delivery and branding centralized.
 - Account deletion uses a 30-day reversible request followed by server-only privileged cleanup, so browser code never receives deletion privileges.
 - The retired free plan remains limited to 50 books only for grandfathered libraries; all newly created libraries require Pro activation.
+- New accounts always start with Pro pending and must resume billing after authentication; cancellation returns to free only for grandfathered libraries.
 - The database resolves each library's default loan duration from `settings`, so every loan entry path uses one authoritative rule.

@@ -19,7 +19,7 @@ export const Route = createFileRoute("/ajuda")({
 });
 
 const questions = [
-  ["O que ocorre se eu cancelar o plano?", "Você pode cancelar gratuitamente em até 7 dias da primeira contratação. Depois desse prazo, pode cancelar quando quiser e o acesso permanece até o fim do período pago. Seu acervo não é apagado e continua disponível para consulta e backup, mas novos cadastros ficam bloqueados até a reativação."],
+  ["O que ocorre se eu cancelar o plano?", "Você pode cancelar gratuitamente em até 7 dias da primeira contratação. Depois desse prazo, pode cancelar quando quiser e o acesso permanece até o fim do período pago. Seu acervo não é apagado e continua disponível para consulta e backup. Após o fim do acesso, novos cadastros ficam bloqueados até a reativação; bibliotecas do antigo plano Gratuito que assinaram o Pro retornam às condições legadas."],
   ["Caso eu exclua minha conta, algum dado continuará salvo?", "A solicitação pode ser cancelada durante 30 dias. Depois desse prazo, a exclusão é definitiva e remove a conta e as bibliotecas de sua titularidade. Antes de solicitar, faça um backup. Registros necessários para obrigações legais podem ser preservados pelo período exigido em lei."],
   ["Onde meus dados ficam hospedados?", "Os dados são mantidos em infraestrutura de nuvem protegida, com controle de acesso e separação entre bibliotecas. Cada pessoa só acessa as bibliotecas das quais participa."],
   ["Posso fazer backup dos meus dados?", "Sim. Em Configurações, administradores podem exportar um backup completo em JSON e restaurá-lo quando necessário. Também é possível exportar o acervo em CSV."],
