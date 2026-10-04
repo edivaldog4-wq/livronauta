@@ -64,6 +64,13 @@
       "when": 1790899395704,
       "tag": "0008_configurable_default_loan_duration",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791072930304,
+      "tag": "0009_grandfather_existing_free_libraries",
+      "breakpoints": true
     }
   ]
 }
