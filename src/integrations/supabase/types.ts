@@ -324,6 +324,10 @@ export type Database = {
         Row: {
           asaas_customer_id: string | null
           asaas_subscription_id: string | null
+          complimentary_access: boolean
+          complimentary_granted_at: string | null
+          complimentary_granted_by: string | null
+          complimentary_reason: string | null
           created_at: string
           current_period_end: string | null
           free_plan_grandfathered: boolean
@@ -337,6 +341,10 @@ export type Database = {
         Insert: {
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          complimentary_access?: boolean
+          complimentary_granted_at?: string | null
+          complimentary_granted_by?: string | null
+          complimentary_reason?: string | null
           created_at?: string
           current_period_end?: string | null
           free_plan_grandfathered?: boolean
@@ -350,6 +358,10 @@ export type Database = {
         Update: {
           asaas_customer_id?: string | null
           asaas_subscription_id?: string | null
+          complimentary_access?: boolean
+          complimentary_granted_at?: string | null
+          complimentary_granted_by?: string | null
+          complimentary_reason?: string | null
           created_at?: string
           current_period_end?: string | null
           free_plan_grandfathered?: boolean
@@ -486,6 +498,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      platform_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          updated_by: string | null
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          updated_by?: string | null
+          value?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
