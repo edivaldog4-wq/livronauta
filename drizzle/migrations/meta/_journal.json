@@ -85,6 +85,13 @@
       "when": 1791073049923,
       "tag": "0011_preserve_paid_access_after_cancellation",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791249112234,
+      "tag": "0012_platform_admin_and_ad_tracking",
+      "breakpoints": true
     }
   ]
 }
