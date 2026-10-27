@@ -1,6 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { z } from "zod";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   ScanBarcode, FileUp, RefreshCw, Tag, Users, Smartphone, Check, X, ShieldCheck, Mail, Sparkles,
@@ -15,6 +14,10 @@ import { BrandMark } from "@/components/BrandMark";
 import { PublicShell, CONTACT_EMAIL } from "@/components/SiteChrome";
 import { PublicSignupDialog, type SignupPlan } from "@/components/PublicSignupDialog";
 import { trackMarketingEvent } from "@/lib/ad-tracking";
+import { contactSchema } from "@/lib/contact-schema";
+import { sendContactMessage } from "@/lib/contact.functions";
+import { ContactCaptcha } from "@/components/ContactCaptcha";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const TITLE = "Livronauta — Sua biblioteca organizada por R$ 14,99/mês";
 const DESC = "Organize livros sem limite, controle empréstimos e imprima etiquetas. Cancele gratuitamente em até 7 dias.";
@@ -54,12 +57,6 @@ const features = [
 ];
 
 const previewBookDelays = ["delay-0", "delay-75", "delay-150"];
-
-const contactSchema = z.object({
-  nome: z.string().trim().min(1, "Informe seu nome").max(100),
-  email: z.string().trim().email("E-mail inválido").max(255),
-  mensagem: z.string().trim().min(5, "Escreva sua mensagem").max(2000),
-});
 
 function Landing() {
   const navigate = useNavigate();
@@ -198,18 +195,30 @@ function Landing() {
 function ContactSection() {
   const [form, setForm] = useState({ nome: "", email: "", mensagem: "" });
   const [busy, setBusy] = useState(false);
-  const submit = async (e: React.FormEvent) => {
+  const [captchaOpen, setCaptchaOpen] = useState(false);
+  const [verificationAttempt, setVerificationAttempt] = useState(0);
+  const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = contactSchema.safeParse(form);
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    setBusy(true);
-    const { error } = await supabase.from("contact_messages").insert(parsed.data as any);
-    setBusy(false);
-    if (error) return toast.error("Não foi possível enviar. Tente pelo e-mail.");
-    toast.success("Mensagem enviada! Responderemos em breve.");
-    trackMarketingEvent("Lead", "generate_lead");
-    setForm({ nome: "", email: "", mensagem: "" });
+    setCaptchaOpen(true);
   };
+  const sendVerified = useCallback(async (captcha: string) => {
+    setBusy(true);
+    try {
+      const parsed = contactSchema.parse(form);
+      await sendContactMessage({ data: { ...parsed, captcha } });
+      toast.success("Mensagem enviada! Responderemos em breve.");
+      trackMarketingEvent("Lead", "generate_lead");
+      setForm({ nome: "", email: "", mensagem: "" });
+      setCaptchaOpen(false);
+    } catch {
+      toast.error("Não foi possível enviar. Refaça a verificação ou tente pelo e-mail.");
+      setVerificationAttempt((attempt) => attempt + 1);
+    } finally {
+      setBusy(false);
+    }
+  }, [form]);
   return (
     <section id="contato" className="mx-auto max-w-3xl scroll-mt-20 px-4 py-16">
       <h2 className="mb-2 text-center text-3xl font-bold">Fale com a gente</h2>
@@ -227,6 +236,16 @@ function ContactSection() {
           <Button type="submit" disabled={busy} className="w-full h-11 font-semibold">{busy ? "Enviando..." : "Enviar mensagem"}</Button>
         </form>
       </CardContent></Card>
+      <Dialog open={captchaOpen} onOpenChange={(open) => { if (!busy) setCaptchaOpen(open); }}>
+        <DialogContent className="w-[calc(100%-2rem)] max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><ShieldCheck className="h-5 w-5 text-primary" />Verificação de segurança</DialogTitle>
+            <DialogDescription>Confirme que você não é um robô para enviar sua mensagem.</DialogDescription>
+          </DialogHeader>
+          {busy ? <p role="status" className="py-4 text-sm text-muted-foreground">Enviando mensagem...</p> :
+            <ContactCaptcha key={verificationAttempt} onVerified={sendVerified} />}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

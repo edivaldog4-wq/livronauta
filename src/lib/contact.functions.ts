@@ -29,7 +29,7 @@ export const sendContactMessage = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("contact_messages").insert({
       nome: data.nome, email: data.email, mensagem: data.mensagem,
       captcha_challenge: challenge,
-    } as any);
-    if (error) throw new Error("Não foi possível enviar. Ref faça a verificação e tente novamente.".replace("Ref faça", "Refaça"));
+    });
+    if (error) throw new Error("Não foi possível enviar. Refaça a verificação e tente novamente.");
     return { ok: true };
   });
