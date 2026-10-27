@@ -12,14 +12,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BackupSection, DataDeletionSection } from "@/components/BackupSection";
 import { AccountDeletionSection } from "@/components/AccountDeletionSection";
+import { AdTrackingSettings } from "@/components/AdTrackingSettings";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  head: () => ({ meta: [{ title: "Configurações — Biblioteca" }] }),
+  head: () => ({ meta: [{ title: "Configurações — Livronauta" }, { name: "description", content: "Configurações da biblioteca e da plataforma Livronauta." }, { property: "og:title", content: "Configurações — Livronauta" }, { property: "og:description", content: "Configurações da biblioteca e da plataforma Livronauta." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SettingsPage,
 });
 
 function SettingsPage() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, isPlatformAdmin } = useAuth();
   const qc = useQueryClient();
   const [multa, setMulta] = useState("1.00");
   const [loanDays, setLoanDays] = useState("14");
@@ -45,7 +46,7 @@ function SettingsPage() {
     if (l) setLibName(typeof l.value === "string" ? l.value : String(l.value));
   }, [settings]);
 
-  if (!isAdmin) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Apenas administradores podem acessar.</CardContent></Card></div>;
+  if (!isAdmin && !isPlatformAdmin) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Apenas administradores podem acessar.</CardContent></Card></div>;
 
   const saveMulta = async () => {
     const v = parseFloat(multa);
@@ -104,6 +105,8 @@ function SettingsPage() {
         <p className="text-muted-foreground text-sm">Parâmetros globais do sistema</p>
       </div>
 
+      {isPlatformAdmin && <AdTrackingSettings />}
+      {isAdmin && <>
       <Card>
         <CardHeader><CardTitle className="text-base">Identificação</CardTitle></CardHeader>
         <CardContent className="space-y-3">
@@ -183,6 +186,7 @@ function SettingsPage() {
       <BackupSection />
       <DataDeletionSection />
       <AccountDeletionSection />
+      </>}
     </div>
   );
 }
