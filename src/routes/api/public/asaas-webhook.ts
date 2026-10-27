@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { z } from "zod";
+import { shouldIgnoreAsaasEvent } from "@/lib/platform-policy";
 
 const asaasEventSchema = z.object({
   event: z.string().max(100),
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: lib } = await supabaseAdmin.from("libraries").select("id, plan, free_plan_grandfathered, complimentary_access").eq("asaas_subscription_id", subId).maybeSingle();
-        if (!lib || lib.plan === "unlimited" || lib.complimentary_access) return new Response("ok");
+        if (!lib || shouldIgnoreAsaasEvent(lib)) return new Response("ok");
 
         let patch: { plan?: string; subscription_status?: string; current_period_end?: string } | null = null;
         if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {

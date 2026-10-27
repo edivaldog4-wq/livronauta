@@ -13,6 +13,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
 import { createAsaasSubscription, cancelAsaasSubscription } from "@/lib/billing.functions";
+import { requiresProActivation } from "@/lib/platform-policy";
 
 function UpgradeBox({ pending }: { pending: boolean }) {
   const createFn = useServerFn(createAsaasSubscription);
@@ -103,7 +104,7 @@ function PlanPage() {
   };
 
   const isFree = usage?.plan === "free" && usage.free_plan_grandfathered;
-  const needsActivation = !usage?.complimentary_access && usage?.plan === "pro" && usage.status !== "active" && usage.status !== "overdue";
+  const needsActivation = requiresProActivation(usage);
   const pct = usage?.limit ? Math.min(100, (usage.books / usage.limit) * 100) : 0;
 
   return (
