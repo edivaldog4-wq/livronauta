@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AjudaRouteImport } from './routes/ajuda'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated/audit'
 import { Route as AuthenticatedBooksRouteImport } from './routes/_authenticated/books'
@@ -55,6 +56,11 @@ const AuthRoute = AuthRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TermosRoute = TermosRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/termos': typeof TermosRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/books': typeof AuthenticatedBooksRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/termos': typeof TermosRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/books': typeof AuthenticatedBooksRoute
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/ajuda': typeof AjudaRoute
   '/auth': typeof AuthRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/termos': typeof TermosRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/books': typeof AuthenticatedBooksRoute
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/ajuda'
     | '/auth'
     | '/privacidade'
+    | '/reset-password'
     | '/termos'
     | '/audit'
     | '/books'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/ajuda'
     | '/auth'
     | '/privacidade'
+    | '/reset-password'
     | '/termos'
     | '/audit'
     | '/books'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/ajuda'
     | '/auth'
     | '/privacidade'
+    | '/reset-password'
     | '/termos'
     | '/_authenticated/audit'
     | '/_authenticated/books'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   AjudaRoute: typeof AjudaRoute
   AuthRoute: typeof AuthRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TermosRoute: typeof TermosRoute
   ApiPublicAccountDeletionsRoute: typeof ApiPublicAccountDeletionsRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
@@ -347,6 +360,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/termos': {
@@ -519,6 +539,7 @@ const rootRouteChildren: RootRouteChildren = {
   AjudaRoute: AjudaRoute,
   AuthRoute: AuthRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TermosRoute: TermosRoute,
   ApiPublicAccountDeletionsRoute: ApiPublicAccountDeletionsRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
