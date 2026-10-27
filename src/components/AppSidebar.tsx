@@ -34,7 +34,7 @@ const items: NavItem[] = [
 export function AppSidebar() {
   const [loanOpen, setLoanOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { isStaff, isAdmin, user, signOut, roles } = useAuth();
+  const { isStaff, isAdmin, isPlatformAdmin, user, signOut, roles } = useAuth();
   const libraryName = useLibraryName();
   const { data: usage } = useLibraryUsage();
   const { data: mine } = useMyLibraries();
@@ -42,6 +42,7 @@ export function AppSidebar() {
   const closeMobileMenu = () => { if (isMobile) setOpenMobile(false); };
 
   const visible = items.filter((i) => {
+    if (isPlatformAdmin && (i.url === "/users" || i.url === "/settings")) return true;
     if (i.adminOnly) return isAdmin;
     if (i.staff) return isStaff;
     return true;
