@@ -103,7 +103,7 @@ function PlanPage() {
   };
 
   const isFree = usage?.plan === "free" && usage.free_plan_grandfathered;
-  const needsActivation = usage?.plan === "pro" && usage.status !== "active" && usage.status !== "overdue";
+  const needsActivation = !usage?.complimentary_access && usage?.plan === "pro" && usage.status !== "active" && usage.status !== "overdue";
   const pct = usage?.limit ? Math.min(100, (usage.books / usage.limit) * 100) : 0;
 
   return (
@@ -116,7 +116,7 @@ function PlanPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
-            Plano atual <Badge>{planLabel[usage?.plan ?? "free"]}</Badge>
+            Plano atual <Badge>{usage?.complimentary_access ? "Gratuidade concedida" : planLabel[usage?.plan ?? "free"]}</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -134,7 +134,8 @@ function PlanPage() {
           ) : (
             <div className="space-y-2 text-sm">
               <div>{usage?.books ?? 0} livros · sem limite</div>
-              {usage?.plan === "pro" && usage.status !== "canceled" && (
+              {usage?.complimentary_access && <p>Acesso gratuito concedido pela administração. Sem cobranças recorrentes.</p>}
+              {!usage?.complimentary_access && usage?.plan === "pro" && usage.status !== "canceled" && (
                 <>
                   <div>
                     Status: <b>{usage.status === "active" ? "Ativa" : usage.status === "overdue" ? "Pagamento atrasado (7 dias de carência)" : usage.status}</b>

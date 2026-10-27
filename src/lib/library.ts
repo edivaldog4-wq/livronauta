@@ -25,6 +25,7 @@ export interface LibraryUsage {
   period_end?: string | null;
   has_subscription?: boolean;
   free_plan_grandfathered?: boolean;
+  complimentary_access?: boolean;
 }
 
 export function useLibraryUsage() {

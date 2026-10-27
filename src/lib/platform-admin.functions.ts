@@ -62,7 +62,7 @@ export const sendUserPasswordReset = createServerFn({ method: "POST" })
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (userError || !userData.user.email) throw new Error("Usuário ou e-mail não encontrado");
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(userData.user.email, {
-      redirectTo: "https://livronauta.app/auth?recovery=1",
+      redirectTo: "https://livronauta.app/reset-password",
     });
     if (error) throw error;
     await auditPlatformAction(supabaseAdmin, context.userId, "Recuperação de senha enviada", data.userId);
