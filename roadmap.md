@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Proteger envio de contato com verificação anti-robô após clicar em enviar
 - [x] Etapas 1–3: bibliotecas separadas, convites e plano gratuito legado limitado a 50 livros
 - [x] Página inicial, termos, privacidade, contato, logo nova, destaque no login
 - [x] Assinatura Pro R$ 14,99 via Asaas (código pronto)
