@@ -1,4 +1,5 @@
 # Project architecture
+- Contact submissions require a signed, expiring ALTCHA proof verified server-side; direct browser inserts are denied and a unique stored challenge digest prevents replay atomically.
 
 - Platform-wide administration uses the protected platform_admins registry and authenticated server functions; library roles never authorize cross-library actions.
 - Advertising configuration accepts only validated IDs; fixed official scripts load only after marketing consent, without library data.

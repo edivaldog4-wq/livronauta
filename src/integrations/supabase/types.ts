@@ -200,6 +200,7 @@ export type Database = {
       }
       contact_messages: {
         Row: {
+          captcha_challenge: string | null
           created_at: string
           email: string
           id: string
@@ -207,6 +208,7 @@ export type Database = {
           nome: string
         }
         Insert: {
+          captcha_challenge?: string | null
           created_at?: string
           email: string
           id?: string
@@ -214,6 +216,7 @@ export type Database = {
           nome: string
         }
         Update: {
+          captcha_challenge?: string | null
           created_at?: string
           email?: string
           id?: string
