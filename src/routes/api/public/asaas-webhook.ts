@@ -45,7 +45,10 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         } else if (event === "SUBSCRIPTION_DELETED" || event === "SUBSCRIPTION_INACTIVATED" || event === "PAYMENT_REFUNDED") {
           patch = { plan: lib.free_plan_grandfathered ? "free" : "pro", subscription_status: "canceled" };
         }
-        if (patch) await supabaseAdmin.from("libraries").update(patch).eq("id", lib.id);
+        if (patch) {
+          const { error } = await supabaseAdmin.from("libraries").update(patch).eq("id", lib.id).eq("complimentary_access", false);
+          if (error) return new Response("Unable to apply event", { status: 500 });
+        }
         return new Response("ok");
       },
     },
