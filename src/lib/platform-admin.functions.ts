@@ -62,7 +62,7 @@ export const sendUserPasswordReset = createServerFn({ method: "POST" })
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     if (userError || !userData.user.email) throw new Error("Usuário ou e-mail não encontrado");
     const { error } = await supabaseAdmin.auth.resetPasswordForEmail(userData.user.email, {
-      redirectTo: "https://livronauta.app/auth?recovery=1",
+      redirectTo: "https://livronauta.app/reset-password",
     });
     if (error) throw error;
     await auditPlatformAction(supabaseAdmin, context.userId, "Recuperação de senha enviada", data.userId);
@@ -93,11 +93,7 @@ export const setPlatformUserRole = createServerFn({ method: "POST" })
   }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await requirePlatformAdmin(context);
-    const { data: library } = await supabaseAdmin.from("libraries").select("owner_id").eq("id", data.libraryId).single();
-    if (library?.owner_id === data.userId && data.role !== "admin") throw new Error("O titular da biblioteca deve permanecer administrador");
-    const { error: deleteError } = await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId).eq("library_id", data.libraryId);
-    if (deleteError) throw deleteError;
-    const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, library_id: data.libraryId, role: data.role });
+    const { error } = await context.supabase.rpc("set_library_member_role", { _user_id: data.userId, _library_id: data.libraryId, _role: data.role });
     if (error) throw error;
     await auditPlatformAction(supabaseAdmin, context.userId, `Papel global alterado para ${data.role}`, data.userId, { libraryId: data.libraryId });
     return { ok: true };
@@ -108,10 +104,11 @@ export const setComplimentaryAccess = createServerFn({ method: "POST" })
   .inputValidator((data) => z.object({ libraryId: z.string().uuid(), enabled: z.boolean(), reason: z.string().trim().max(300).optional() }).parse(data))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await requirePlatformAdmin(context);
-    const { data: library, error: libraryError } = await supabaseAdmin.from("libraries").select("asaas_subscription_id, complimentary_access").eq("id", data.libraryId).single();
+    const { data: library, error: libraryError } = await supabaseAdmin.from("libraries").select("asaas_subscription_id, complimentary_access, plan, subscription_status").eq("id", data.libraryId).single();
     if (libraryError) throw libraryError;
+    if (library.plan === "unlimited") throw new Error("O acesso institucional principal não pode ser alterado aqui");
     if (data.enabled && !data.reason) throw new Error("Informe o motivo da gratuidade");
-    if (data.enabled && library.asaas_subscription_id) {
+    if (data.enabled && library.asaas_subscription_id && library.subscription_status !== "canceled") {
       const { asaas } = await import("./asaas.server");
       await asaas(`/subscriptions/${library.asaas_subscription_id}`, { method: "DELETE" });
     }

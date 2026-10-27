@@ -11,6 +11,7 @@ interface AuthContextValue {
   loading: boolean;
   isStaff: boolean;
   isAdmin: boolean;
+  isPlatformAdmin: boolean;
   refreshRoles: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -21,15 +22,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
+  const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchRoles = async (uid: string | null) => {
     if (!uid) {
       setRoles([]);
+      setIsPlatformAdmin(false);
       return;
     }
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+    const [{ data }, { data: founder }] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.rpc("is_platform_admin"),
+    ]);
     setRoles((data?.map((r) => r.role) as AppRole[]) ?? []);
+    setIsPlatformAdmin(founder === true);
   };
 
   useEffect(() => {
@@ -58,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isStaff: roles.includes("admin") || roles.includes("bibliotecario"),
     isAdmin: roles.includes("admin"),
+    isPlatformAdmin,
     refreshRoles: () => fetchRoles(user?.id ?? null),
     signOut: async () => {
       await supabase.auth.signOut();

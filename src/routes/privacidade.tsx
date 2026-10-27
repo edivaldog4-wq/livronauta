@@ -31,7 +31,7 @@ export const Route = createFileRoute("/privacidade")({
         <h2>6. Seus direitos</h2>
         <p>Você pode solicitar acesso, correção, portabilidade ou exclusão dos seus dados, e revogar consentimentos, pelo e-mail abaixo.</p>
         <h2>7. Cookies</h2>
-        <p>Usamos apenas armazenamento local essencial para manter sua sessão conectada.</p>
+        <p>Usamos armazenamento local essencial para manter sua sessão conectada. Com sua autorização, também usamos cookies e identificadores do Meta Ads e Google Ads para medir campanhas. Esses recursos permanecem desativados se você recusar e o consentimento pode ser alterado pelo botão “Cookies”. Não enviamos dados do acervo ou dos empréstimos a essas plataformas.</p>
         <h2>8. Contato do encarregado</h2>
         <p><a className="underline" href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a></p>
       </article>

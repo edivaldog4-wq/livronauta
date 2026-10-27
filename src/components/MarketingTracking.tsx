@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { loadMarketingTags, MARKETING_CONSENT_KEY, trackPageView, type MarketingConsent } from "@/lib/ad-tracking";
+import { loadMarketingTags, MARKETING_CONSENT_KEY, revokeMarketingConsent, type MarketingConsent } from "@/lib/ad-tracking";
 
 export function MarketingTracking() {
   const href = useRouterState({ select: (state) => state.location.href });
@@ -16,7 +16,7 @@ export function MarketingTracking() {
   }, []);
 
   useEffect(() => {
-    if (consent === "granted") trackPageView();
+    if (consent === "granted") void loadMarketingTags();
   }, [href, consent]);
 
   const choose = (value: Exclude<MarketingConsent, null>) => {
@@ -24,6 +24,7 @@ export function MarketingTracking() {
     setConsent(value);
     setDecided(true);
     if (value === "granted") void loadMarketingTags();
+    else if (consent === "granted") revokeMarketingConsent();
   };
 
   return (

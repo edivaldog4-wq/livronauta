@@ -781,6 +781,14 @@ export type Database = {
             Returns: number
           }
       set_active_library: { Args: { _library_id: string }; Returns: boolean }
+      set_library_member_role: {
+        Args: {
+          _library_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       update_loan_due_date: {
         Args: { _loan_id: string; _new_date: string }
         Returns: boolean

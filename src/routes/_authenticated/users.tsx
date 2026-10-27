@@ -11,14 +11,15 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { PlatformUsers } from "@/components/PlatformUsers";
 
 export const Route = createFileRoute("/_authenticated/users")({
-  head: () => ({ meta: [{ title: "Usuários — Biblioteca" }] }),
+  head: () => ({ meta: [{ title: "Usuários — Livronauta" }, { name: "description", content: "Administração de usuários e membros no Livronauta." }, { property: "og:title", content: "Usuários — Livronauta" }, { property: "og:description", content: "Administração de usuários e membros no Livronauta." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: UsersPage,
 });
 
 function UsersPage() {
-  const { isStaff, isAdmin, user: me } = useAuth();
+  const { isStaff, isAdmin, isPlatformAdmin, user: me } = useAuth();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
 
@@ -44,8 +45,9 @@ function UsersPage() {
 
   const changeRole = async (uid: string, newRole: "admin" | "bibliotecario" | "membro") => {
     if (!isAdmin) return toast.error("Apenas administradores podem alterar papéis");
-    await supabase.from("user_roles").delete().eq("user_id", uid);
-    const { error } = await supabase.from("user_roles").insert({ user_id: uid, role: newRole });
+    const { data: libraryId } = await supabase.rpc("current_library_id");
+    if (!libraryId) return toast.error("Biblioteca não encontrada");
+    const { error } = await supabase.rpc("set_library_member_role", { _user_id: uid, _library_id: libraryId, _role: newRole });
     if (error) return toast.error(error.message);
     toast.success("Papel atualizado");
     qc.invalidateQueries({ queryKey: ["all-roles"] });
@@ -67,7 +69,7 @@ function UsersPage() {
     qc.invalidateQueries({ queryKey: ["users"] });
   };
 
-  if (!isStaff) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
+  if (!isStaff && !isPlatformAdmin) return <div className="container mx-auto p-6"><Card><CardContent className="py-12 text-center text-muted-foreground">Acesso restrito.</CardContent></Card></div>;
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-4">
@@ -76,7 +78,8 @@ function UsersPage() {
         <p className="text-muted-foreground text-sm">Gerencie os membros do sistema</p>
       </div>
 
-      <Card>
+      {isPlatformAdmin && <PlatformUsers />}
+      {isStaff && <Card>
         <CardContent className="pt-6">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -135,7 +138,7 @@ function UsersPage() {
             Novos usuários se cadastram através da tela de login. Edite os campos diretamente clicando neles.
           </p>
         </CardContent>
-      </Card>
+      </Card>}
     </div>
   );
 }

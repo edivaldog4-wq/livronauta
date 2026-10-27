@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
+import { trackMarketingEvent } from "@/lib/ad-tracking";
 
 export type SignupPlan = "pro";
 
@@ -36,6 +37,7 @@ export function PublicSignupDialog({
     });
     setBusy(false);
     if (error) return toast.error(`Não foi possível criar a conta: ${error.message}`);
+    trackMarketingEvent("CompleteRegistration", "sign_up");
 
     if (data.session) {
       toast.success("Conta e biblioteca criadas!");
