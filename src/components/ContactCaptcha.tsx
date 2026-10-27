@@ -21,7 +21,8 @@ export function ContactCaptcha({ onVerified }: { onVerified: (payload: string) =
         const element = document.createElement("altcha-widget");
         widget = element;
         element.addEventListener("verified", verified);
-        await element.configure({ challenge, language: "pt-br" });
+        element.setAttribute("challenge", JSON.stringify(challenge));
+        element.setAttribute("language", "pt-br");
         container.current.replaceChildren(element);
       } catch {
         if (!disposed) setError(true);
