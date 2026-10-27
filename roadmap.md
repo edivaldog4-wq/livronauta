@@ -15,8 +15,9 @@
 - [x] Corrigir leitura e vínculo de códigos de barras e QR Codes das etiquetas
 - [ ] Ativar execução diária da exclusão após 30 dias — aguardando agendamento externo da rotina protegida
 
-- [ ] Criar painel seguro do fundador para administrar usuários da plataforma
-- [ ] Permitir recuperação de senha, troca de e-mail e gestão de administradores
-- [ ] Criar gratuidade concedida pelo fundador e blindada contra atualizações do Asaas
-- [ ] Adicionar Meta Pixel e Google Ads configuráveis, com consentimento e rastreamento
-- [ ] Validar permissões, cobrança, pixels e experiência mobile
+- [x] Criar painel seguro do fundador para administrar usuários da plataforma
+- [x] Permitir recuperação de senha, troca de e-mail e gestão de administradores
+- [x] Criar gratuidade concedida pelo fundador e blindada contra atualizações do Asaas
+- [x] Adicionar Meta Pixel e Google Ads configuráveis, com consentimento e rastreamento
+- [x] Validar permissões, gratuidade, pixels e experiência mobile
+- [ ] Ativar pixels reais e confirmar recebimento nas plataformas — aguardando IDs do proprietário e publicação

@@ -79,7 +79,11 @@ export const changePlatformUserEmail = createServerFn({ method: "POST" })
     const oldEmail = current.user.email ?? "";
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, { email: data.email, email_confirm: true });
     if (error) throw error;
-    await supabaseAdmin.from("profiles").update({ email: data.email }).eq("id", data.userId);
+    const { error: profileError } = await supabaseAdmin.from("profiles").update({ email: data.email }).eq("id", data.userId);
+    if (profileError) {
+      await supabaseAdmin.auth.admin.updateUserById(data.userId, { email: oldEmail, email_confirm: true });
+      throw new Error("Não foi possível atualizar o perfil; a troca foi desfeita");
+    }
     await auditPlatformAction(supabaseAdmin, context.userId, "E-mail de acesso alterado", data.userId, { oldEmail, newEmail: data.email });
     return { ok: true };
   });
