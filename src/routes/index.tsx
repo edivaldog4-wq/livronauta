@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandMark } from "@/components/BrandMark";
 import { PublicShell, CONTACT_EMAIL } from "@/components/SiteChrome";
 import { PublicSignupDialog, type SignupPlan } from "@/components/PublicSignupDialog";
+import { trackMarketingEvent } from "@/lib/ad-tracking";
 
 const TITLE = "Livronauta — Sua biblioteca organizada por R$ 14,99/mês";
 const DESC = "Organize livros sem limite, controle empréstimos e imprima etiquetas. Cancele gratuitamente em até 7 dias.";
@@ -206,6 +207,7 @@ function ContactSection() {
     setBusy(false);
     if (error) return toast.error("Não foi possível enviar. Tente pelo e-mail.");
     toast.success("Mensagem enviada! Responderemos em breve.");
+    trackMarketingEvent("Lead", "generate_lead");
     setForm({ nome: "", email: "", mensagem: "" });
   };
   return (

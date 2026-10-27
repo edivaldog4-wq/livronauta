@@ -25,7 +25,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { lib, supabaseAdmin } = await adminLibrary(context);
-    if (lib.plan === "unlimited") throw new Error("Esta biblioteca já é ilimitada");
+    if (lib.plan === "unlimited" || lib.complimentary_access) throw new Error("Esta biblioteca já possui acesso ilimitado gratuito");
     let customerId = lib.asaas_customer_id as string | null;
     if (!customerId) {
       const c = await asaas<{ id: string }>("/customers", {
@@ -60,6 +60,7 @@ export const cancelAsaasSubscription = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { lib, supabaseAdmin } = await adminLibrary(context);
     if (!lib.asaas_subscription_id) throw new Error("Nenhuma assinatura ativa");
+    if (lib.complimentary_access || lib.plan === "unlimited") throw new Error("Esta biblioteca possui acesso gratuito permanente");
     await asaas(`/subscriptions/${lib.asaas_subscription_id}`, { method: "DELETE" });
     await supabaseAdmin.from("libraries").update({
       subscription_status: "canceled",
