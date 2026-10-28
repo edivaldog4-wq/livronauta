@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { timingSafeEqual } from "crypto";
 import { z } from "zod";
 import { shouldIgnoreAsaasEvent } from "@/lib/platform-policy";
+import { extractPaidPayment } from "@/lib/meta-capi";
 
 const asaasEventSchema = z.object({
   event: z.string().max(100),
@@ -49,6 +50,26 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         if (patch) {
           const { error } = await supabaseAdmin.from("libraries").update(patch).eq("id", lib.id).eq("complimentary_access", false);
           if (error) return new Response("Unable to apply event", { status: 500 });
+        }
+        // Advertising reports run after access is granted and never block the webhook.
+        try {
+          const paid = extractPaidPayment(body);
+          if (paid) {
+            const environment = process.env["ASAAS_ENV"] === "production" ? "production" : "sandbox";
+            const { data: rows, error } = await (supabaseAdmin as any).rpc("record_asaas_paid_payment", {
+              _library_id: lib.id, _payment_id: paid.id, _value: paid.value, _environment: environment,
+            });
+            if (error) console.error("meta record failed", error.code);
+            const ids = (rows ?? []).map((r: any) => r.event_row_id);
+            if (ids.length) {
+              const { processMetaEvents } = await import("@/lib/meta-capi.server");
+              await processMetaEvents(ids);
+            }
+          } else if (event === "PAYMENT_REFUNDED" && typeof body.payment?.id === "string") {
+            await (supabaseAdmin as any).rpc("cancel_unsent_meta_events_for_payment", { _payment_id: body.payment.id });
+          }
+        } catch (e) {
+          console.error("meta reporting skipped", (e as Error)?.name);
         }
         return new Response("ok");
       },
