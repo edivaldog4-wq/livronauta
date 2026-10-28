@@ -57,9 +57,14 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           if (paid) {
             const environment = process.env["ASAAS_ENV"] === "production" ? "production" : "sandbox";
             const { data: rows, error } = await (supabaseAdmin as any).rpc("record_asaas_paid_payment", {
-              _library_id: lib.id, _payment_id: paid.id, _value: paid.value, _environment: environment,
+              _library_id: lib.id, _payment_id: paid.id, _value: paid.value, _environment: environment, _paid_at: paid.paidAt,
             });
-            if (error) console.error("meta record failed", error.code);
+            if (error) {
+              console.error("meta record failed", error.code);
+              // Paid access has already been granted. Ask Asaas to retry durable recording;
+              // network/API delivery failures below never fail this webhook.
+              return new Response("Unable to persist payment report", { status: 503 });
+            }
             const ids = (rows ?? []).map((r: any) => r.event_row_id);
             if (ids.length) {
               const { processMetaEvents } = await import("@/lib/meta-capi.server");
@@ -70,6 +75,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           }
         } catch (e) {
           console.error("meta reporting skipped", (e as Error)?.name);
+          return new Response("Unable to persist payment report", { status: 503 });
         }
         return new Response("ok");
       },

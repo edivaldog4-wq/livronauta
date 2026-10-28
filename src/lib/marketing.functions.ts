@@ -9,9 +9,9 @@ export const recordMarketingConsent = createServerFn({ method: "POST" })
   .inputValidator((d) => z.object({ choice: z.enum(["granted", "denied"]), source: z.enum(["banner", "signup"]) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: last } = await (supabaseAdmin as any).from("marketing_consent_records").select("choice")
+    const { data: last } = await (supabaseAdmin as any).from("marketing_consent_records").select("choice,notice_version")
       .eq("user_id", context.userId).order("created_at", { ascending: false }).limit(1).maybeSingle();
-    if (last?.choice === data.choice) return { ok: true };
+    if (last?.choice === data.choice && last?.notice_version === MARKETING_NOTICE_VERSION) return { ok: true };
     const { error } = await (supabaseAdmin as any).from("marketing_consent_records").insert({
       user_id: context.userId, choice: data.choice, notice_version: MARKETING_NOTICE_VERSION, source: data.source,
     });

@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test:meta": "bun test src/lib/meta-capi.test.ts src/lib/platform-policy.test.ts && node scripts/verify-meta-idempotency.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -109,7 +110,8 @@
     "prettier": "^3.7.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.56.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "@electric-sql/pglite": "^0.5.12"
   },
   "overrides": {
     "dompurify": "3.4.17"
