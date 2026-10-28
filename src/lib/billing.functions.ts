@@ -30,12 +30,15 @@ async function saveCheckoutAttribution(supabaseAdmin: any, context: any, library
     }).select("id").single();
     if (m.consent !== "granted" || !consent) return;
     const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const saved = context.claims?.user_metadata?.marketing_attribution;
     const email = typeof context.claims?.email === "string" ? context.claims.email : "";
     await supabaseAdmin.from("meta_checkout_attribution").insert({
       library_id: libraryId, user_id: context.userId, consent_record_id: consent.id,
       em_hash: email ? await sha256Hex(normalizeEmail(email)) : null,
       external_id_hash: await sha256Hex(context.userId),
-      fbp: m.fbp ?? null, fbc: m.fbc ?? null,
+      // Fallback: identifiers saved with consent at signup (e.g. email confirmed in another browser).
+      fbp: m.fbp ?? (FBP_RE.test(saved?.fbp ?? "") ? saved.fbp : null),
+      fbc: m.fbc ?? (FBC_RE.test(saved?.fbc ?? "") ? saved.fbc : null),
       client_ip: (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ?? "").slice(0, 64) || null,
       client_user_agent: (getRequestHeader("user-agent") ?? "").slice(0, 512) || null,
       event_source_url: "https://livronauta.app/plan",
