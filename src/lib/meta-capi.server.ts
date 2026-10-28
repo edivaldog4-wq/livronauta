@@ -1,4 +1,4 @@
-import { deliverEvent, PIXEL_RE, type Attribution, type CapiEvent } from "./meta-capi";
+import { deliverEvent, PIXEL_RE, MARKETING_NOTICE_VERSION, type Attribution, type CapiEvent } from "./meta-capi";
 import { asaas } from "./asaas.server";
 
 /** Claims pending/failed events atomically and delivers them. Never throws. */
@@ -27,13 +27,20 @@ export async function processMetaEvents(ids?: string[], limit = 25) {
           return { ...a, consent_granted: a.consent?.choice === "granted" } as Attribution;
         },
         latestConsentGranted: async (userId) => {
-          const { data } = await db.from("marketing_consent_records").select("choice").eq("user_id", userId)
+          const { data } = await db.from("marketing_consent_records").select("choice,notice_version").eq("user_id", userId)
             .order("created_at", { ascending: false }).limit(1).maybeSingle();
-          return data?.choice === "granted";
+          return data?.choice === "granted" && data?.notice_version === MARKETING_NOTICE_VERSION;
         },
         customerPayments: async (customerId) => {
-          const r = await asaas<{ data: any[] }>(`/payments?customer=${encodeURIComponent(customerId)}&limit=100`);
-          return r.data ?? [];
+          const payments: any[] = [];
+          for (let offset = 0; offset < 10000; offset += 100) {
+            const r = await asaas<{ data: any[]; hasMore: boolean }>(`/payments?customer=${encodeURIComponent(customerId)}&limit=100&offset=${offset}`);
+            if (!Array.isArray(r.data) || typeof r.hasMore !== "boolean") throw new Error("incomplete_history");
+            payments.push(...r.data);
+            if (!r.hasMore) return payments;
+            if (!r.data.length) throw new Error("incomplete_history");
+          }
+          throw new Error("history_limit_exceeded");
         },
       });
       summary[outcome.status] = (summary[outcome.status] ?? 0) + 1;

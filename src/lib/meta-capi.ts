@@ -10,19 +10,43 @@ export const FBC_RE = /^fb\.[0-2]\.\d{10,16}\.[A-Za-z0-9_-]{10,400}$/;
 export const PIXEL_RE = /^\d{8,20}$/;
 
 /** Extracts a genuinely paid payment from an authenticated Asaas webhook body, or null. */
-export function extractPaidPayment(body: any): { id: string; value: number } | null {
+/** Asaas date-only fields are interpreted at the start of their calendar day in Brazil.
+ * Precision is limited by the provider; never replace the payment date with the retry time.
+ */
+export function paymentTimestamp(p: Record<string, unknown>): string | null {
+  for (const key of ["clientPaymentDate", "confirmedDate", "paymentDate"]) {
+    const value = p[key];
+    if (typeof value !== "string") continue;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) continue;
+    const date = new Date(`${value}T00:00:00-03:00`);
+    if (Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value) return date.toISOString();
+  }
+  return null;
+}
+
+export function extractPaidPayment(body: any): { id: string; value: number; paidAt: string } | null {
   if (!body || !PAID_EVENTS.has(body.event)) return null;
   const p = body.payment;
   if (!p || typeof p.id !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(p.id)) return null;
   if (!PAID_STATUSES.has(p.status) || p.deleted === true) return null;
   const value = Number(p.value);
   if (!Number.isFinite(value) || value <= 0) return null;
-  return { id: p.id, value: Math.round(value * 100) / 100 };
+  const paidAt = paymentTimestamp(p);
+  if (!paidAt) return null;
+  return { id: p.id, value: Math.round(value * 100) / 100, paidAt };
 }
 
-/** True when the customer already had a paid Asaas payment other than the current one. */
-export function hasEarlierPaidPayment(payments: Array<{ id?: string; status?: string }>, currentId: string) {
-  return payments.some((p) => p.id !== currentId && PAID_STATUSES.has(p.status ?? ""));
+/** Missing or same-day ambiguous history fails closed rather than reporting an existing subscriber as new. */
+export type HistoricalPayment = { id?: string; status?: string; clientPaymentDate?: string; confirmedDate?: string; paymentDate?: string };
+export function hasEarlierPaidPayment(payments: HistoricalPayment[], currentId: string, paidAt: string) {
+  const current = Date.parse(paidAt);
+  if (!Number.isFinite(current)) throw new Error("history_unverified: invalid current date");
+  return payments.some((p) => {
+    if (p.id === currentId || !PAID_STATUSES.has(p.status ?? "")) return false;
+    const date = paymentTimestamp(p);
+    if (!date) throw new Error("history_unverified: missing paid date");
+    return Date.parse(date) <= current;
+  });
 }
 
 export async function sha256Hex(input: string) {
@@ -72,7 +96,7 @@ export type Deps = {
   now?: () => number;
   attribution: (event: CapiEvent) => Promise<Attribution | null>;
   latestConsentGranted: (userId: string) => Promise<boolean>;
-  customerPayments: (customerId: string) => Promise<Array<{ id?: string; status?: string }>>;
+  customerPayments: (customerId: string) => Promise<HistoricalPayment[]>;
 };
 
 /** Decides and performs one delivery. Never throws; returns the status to persist. */
@@ -80,13 +104,14 @@ export async function deliverEvent(event: CapiEvent, deps: Deps): Promise<Outcom
   try {
     const now = deps.now?.() ?? Date.now();
     if (event.environment !== "production") return { status: "skipped_test" };
+    if (!Number.isFinite(Date.parse(event.event_time)) || Date.parse(event.event_time) > now + 60000) return { status: "failed", error: "invalid_payment_time" };
     if (now - new Date(event.event_time).getTime() > MAX_EVENT_AGE_MS) return { status: "expired", error: "older than 7 days" };
     if (event.event_name === "Subscribe" && !event.history_verified) {
       if (!event.asaas_customer_id) return { status: "failed", error: "history_unverified: missing customer" };
       let payments;
       try { payments = await deps.customerPayments(event.asaas_customer_id); }
       catch { return { status: "failed", error: "history_unverified: asaas unavailable" }; }
-      if (hasEarlierPaidPayment(payments, event.asaas_payment_id)) return { status: "skipped_existing_customer" };
+      if (hasEarlierPaidPayment(payments, event.asaas_payment_id, event.event_time)) return { status: "skipped_existing_customer" };
     }
     const attr = await deps.attribution(event);
     if (!attr || !attr.consent_granted || !(await deps.latestConsentGranted(attr.user_id))) return { status: "blocked_consent" };

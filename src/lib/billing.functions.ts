@@ -15,11 +15,14 @@ async function adminLibrary(context: any) {
   return { lib, supabaseAdmin };
 }
 
-const marketingSchema = z.object({
-  consent: z.enum(["granted", "denied"]).nullable(),
-  fbp: z.string().regex(FBP_RE).nullable().optional(),
-  fbc: z.string().regex(FBC_RE).nullable().optional(),
-}).optional();
+const marketingSchema = z.unknown().optional().transform((raw) => {
+  const m = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
+  return {
+    consent: m.consent === "granted" || m.consent === "denied" ? m.consent : null,
+    fbp: typeof m.fbp === "string" && FBP_RE.test(m.fbp) ? m.fbp : null,
+    fbc: typeof m.fbc === "string" && FBC_RE.test(m.fbc) ? m.fbc : null,
+  } as { consent: "granted" | "denied" | null; fbp: string | null; fbc: string | null };
+});
 
 /** Stores consented attribution for this library's checkout. Never blocks billing. */
 async function saveCheckoutAttribution(supabaseAdmin: any, context: any, libraryId: string, m: z.infer<typeof marketingSchema>) {

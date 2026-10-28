@@ -32,7 +32,8 @@ function UpgradeBox({ pending }: { pending: boolean }) {
     if (busy) return;
     setBusy(true);
     try {
-      const saved = localStorage.getItem(MARKETING_CONSENT_KEY);
+      let saved: string | null = null;
+      try { saved = localStorage.getItem(MARKETING_CONSENT_KEY); } catch { /* storage must not prevent payment */ }
       const consent = saved === "granted" || saved === "denied" ? saved : null;
       const { url, paymentId, value } = await createFn({ data: { ...f, cpfCnpj: f.cpfCnpj.replace(/\D/g, ""), marketing: { consent, ...metaBrowserIds() } } });
       window.open(url, "_blank", "noopener");

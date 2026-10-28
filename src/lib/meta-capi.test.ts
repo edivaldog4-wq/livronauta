@@ -10,15 +10,15 @@ const deps = (o: Partial<Deps> = {}): Deps => ({ fetch: mock(async () => Respons
 
 describe("prova de pagamento", () => {
   test("só CONFIRMED/RECEIVED pagos com valor real", () => {
-    expect(extractPaidPayment({ event: "PAYMENT_RECEIVED", payment: { id: "pay_1", status: "RECEIVED", value: 14.99 } })).toEqual({ id: "pay_1", value: 14.99 });
+    expect(extractPaidPayment({ event: "PAYMENT_RECEIVED", payment: { id: "pay_1", status: "RECEIVED", value: 14.99, clientPaymentDate: "2026-10-27" } })).toEqual({ id: "pay_1", value: 14.99, paidAt: "2026-10-27T03:00:00.000Z" });
     expect(extractPaidPayment({ event: "PAYMENT_CREATED", payment: { id: "pay_1", status: "PENDING", value: 14.99 } })).toBeNull();
     expect(extractPaidPayment({ event: "PAYMENT_REFUNDED", payment: { id: "pay_1", status: "REFUNDED", value: 14.99 } })).toBeNull();
     expect(extractPaidPayment({ event: "PAYMENT_CONFIRMED", payment: { id: "pay_1", status: "PENDING", value: 14.99 } })).toBeNull();
     expect(extractPaidPayment({ event: "PAYMENT_CONFIRMED", payment: { id: "pay_1", status: "CONFIRMED", value: 0 } })).toBeNull();
   });
   test("cliente com pagamento anterior não é nova assinatura", () => {
-    expect(hasEarlierPaidPayment([{ id: "old", status: "RECEIVED" }], "pay_1")).toBe(true);
-    expect(hasEarlierPaidPayment([{ id: "pay_1", status: "RECEIVED" }, { id: "x", status: "PENDING" }], "pay_1")).toBe(false);
+    expect(hasEarlierPaidPayment([{ id: "old", status: "RECEIVED", clientPaymentDate: "2026-10-26" }], "pay_1", "2026-10-27T03:00:00Z")).toBe(true);
+    expect(hasEarlierPaidPayment([{ id: "pay_1", status: "RECEIVED" }, { id: "x", status: "PENDING" }], "pay_1", "2026-10-27T03:00:00Z")).toBe(false);
   });
   test("e-mail normalizado e hash SHA-256", async () => {
     expect(await sha256Hex(normalizeEmail(" A@B.com "))).toBe(await sha256Hex("a@b.com"));
@@ -56,8 +56,27 @@ describe("entrega ao Meta", () => {
   });
   test("Subscribe: assinante antigo pulado; Asaas fora mantém pendente", async () => {
     const s = ev({ event_name: "Subscribe", history_verified: false });
-    expect((await deliverEvent(s, deps({ customerPayments: async () => [{ id: "old", status: "RECEIVED" }] }))).status).toBe("skipped_existing_customer");
+    expect((await deliverEvent(s, deps({ customerPayments: async () => [{ id: "old", status: "RECEIVED", clientPaymentDate: "2020-01-01" }] }))).status).toBe("skipped_existing_customer");
     expect((await deliverEvent(s, deps({ customerPayments: async () => { throw new Error(); } }))).status).toBe("failed");
     expect((await deliverEvent(s, deps())).status).toBe("sent");
+  });
+});
+
+
+describe("datas e histórico de pagamentos", () => {
+  test("replay conserva a data do pagamento e não usa a data atual", () => {
+    const paid = extractPaidPayment({ event: "PAYMENT_RECEIVED", payment: { id: "pay_old", status: "RECEIVED", value: 12.5, clientPaymentDate: "2020-01-01" } });
+    expect(paid?.paidAt).toBe("2020-01-01T03:00:00.000Z");
+    expect(extractPaidPayment({ event: "PAYMENT_CONFIRMED", payment: { id: "pay_missing", status: "CONFIRMED", value: 10 } })).toBeNull();
+  });
+  test("renovação posterior não invalida primeira assinatura", () => {
+    expect(hasEarlierPaidPayment([{ id: "next", status: "RECEIVED", clientPaymentDate: "2026-11-27" }], "pay_1", "2026-10-27T03:00:00Z")).toBe(false);
+    expect(() => hasEarlierPaidPayment([{ id: "unknown", status: "RECEIVED" }], "pay_1", "2026-10-27T03:00:00Z")).toThrow();
+  });
+  test("datas inválidas e futuras não enviam eventos", async () => {
+    const d = deps();
+    expect((await deliverEvent(ev({ event_time: "invalid" }), d)).status).toBe("failed");
+    expect((await deliverEvent(ev({ event_time: new Date(Date.now() + 3600000).toISOString() }), d)).status).toBe("failed");
+    expect((d.fetch as any).mock.calls.length).toBe(0);
   });
 });

@@ -54,7 +54,7 @@ export function MarketingTracking() {
         <aside className="fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-3xl rounded-md border border-border bg-card p-4 text-card-foreground shadow-xl" aria-label="Preferências de cookies">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <p className="text-sm text-muted-foreground">
-              Com sua permissão, usamos cookies de publicidade do Meta e do Google para medir campanhas e, ao assinar, compartilhamos com o Meta seu e-mail criptografado e o valor pago. Nada do acervo é enviado. Você pode recusar ou mudar depois em “Cookies”.
+              Com sua permissão, usamos cookies de publicidade do Meta e do Google para medir campanhas e, ao assinar, compartilhamos com o Meta seu e-mail transformado em código de identificação e o valor pago. Nada do acervo é enviado. Você pode recusar ou mudar depois em “Cookies”.
             </p>
             <div className="flex shrink-0 gap-2">
               <Button variant="outline" size="sm" onClick={() => choose("denied")}>Recusar</Button>

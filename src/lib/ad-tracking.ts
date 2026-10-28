@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type MarketingConsent = "granted" | "denied" | null;
-export const MARKETING_CONSENT_KEY = "livronauta_marketing_consent";
+export const MARKETING_CONSENT_KEY = "livronauta_marketing_consent_v2";
 const CHECKOUT_FIRED_KEY = "livronauta_ic_fired";
 
 type Fbq = ((...args: unknown[]) => void) & { callMethod?: (...args: unknown[]) => void; queue?: unknown[]; push?: unknown; loaded?: boolean; version?: string; disablePushState?: boolean };
@@ -20,14 +20,16 @@ let lastPage = "";
 // Page views are measured only on public pages; the plan page only allows the explicit checkout event.
 const publicPaths = new Set(["/", "/auth", "/ajuda", "/privacidade", "/termos"]);
 
-export const hasMarketingConsent = () => localStorage.getItem(MARKETING_CONSENT_KEY) === "granted";
+export function hasMarketingConsent() {
+  try { return localStorage.getItem(MARKETING_CONSENT_KEY) === "granted"; } catch { return false; }
+}
 export function canTrackMarketing() {
   return hasMarketingConsent() && publicPaths.has(window.location.pathname);
 }
 
 function readCookie(name: string) {
   const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-  return m ? decodeURIComponent(m[1]) : null;
+  try { return m ? decodeURIComponent(m[1]) : null; } catch { return null; }
 }
 /** Meta browser identifiers, only with advertising consent. Never fabricated. */
 export function metaBrowserIds() {
