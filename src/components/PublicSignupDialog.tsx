@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { trackMarketingEvent } from "@/lib/ad-tracking";
+import { hasMarketingConsent, metaBrowserIds, trackMarketingEvent } from "@/lib/ad-tracking";
 
 export type SignupPlan = "pro";
 
@@ -32,7 +32,12 @@ export function PublicSignupDialog({
       password: form.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth?plan=pro`,
-        data: { nome: form.nome, onboarding_plan: plan },
+        data: {
+          nome: form.nome,
+          onboarding_plan: plan,
+          // Consented Meta identifiers kept with the account for the later checkout (no fabrication).
+          ...(hasMarketingConsent() ? { marketing_attribution: { ...metaBrowserIds(), consent: "granted" } } : {}),
+        },
       },
     });
     setBusy(false);
