@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { asaas } from "./asaas.server";
+import { FBC_RE, FBP_RE, MARKETING_NOTICE_VERSION, normalizeEmail, sha256Hex } from "./meta-capi";
 
 async function adminLibrary(context: any) {
   const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
@@ -14,6 +15,39 @@ async function adminLibrary(context: any) {
   return { lib, supabaseAdmin };
 }
 
+const marketingSchema = z.object({
+  consent: z.enum(["granted", "denied"]).nullable(),
+  fbp: z.string().regex(FBP_RE).nullable().optional(),
+  fbc: z.string().regex(FBC_RE).nullable().optional(),
+}).optional();
+
+/** Stores consented attribution for this library's checkout. Never blocks billing. */
+async function saveCheckoutAttribution(supabaseAdmin: any, context: any, libraryId: string, m: z.infer<typeof marketingSchema>) {
+  try {
+    if (!m?.consent) return;
+    const { data: consent } = await supabaseAdmin.from("marketing_consent_records").insert({
+      user_id: context.userId, choice: m.consent, notice_version: MARKETING_NOTICE_VERSION, source: "checkout",
+    }).select("id").single();
+    if (m.consent !== "granted" || !consent) return;
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    const saved = context.claims?.user_metadata?.marketing_attribution;
+    const email = typeof context.claims?.email === "string" ? context.claims.email : "";
+    await supabaseAdmin.from("meta_checkout_attribution").insert({
+      library_id: libraryId, user_id: context.userId, consent_record_id: consent.id,
+      em_hash: email ? await sha256Hex(normalizeEmail(email)) : null,
+      external_id_hash: await sha256Hex(context.userId),
+      // Fallback: identifiers saved with consent at signup (e.g. email confirmed in another browser).
+      fbp: m.fbp ?? (FBP_RE.test(saved?.fbp ?? "") ? saved.fbp : null),
+      fbc: m.fbc ?? (FBC_RE.test(saved?.fbc ?? "") ? saved.fbc : null),
+      client_ip: (getRequestHeader("cf-connecting-ip") ?? getRequestHeader("x-forwarded-for")?.split(",")[0]?.trim() ?? "").slice(0, 64) || null,
+      client_user_agent: (getRequestHeader("user-agent") ?? "").slice(0, 512) || null,
+      event_source_url: "https://livronauta.app/plan",
+    });
+  } catch (e) {
+    console.error("checkout attribution skipped", (e as Error)?.name);
+  }
+}
+
 export const createAsaasSubscription = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
@@ -21,6 +55,7 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       nome: z.string().trim().min(2).max(100),
       cpfCnpj: z.string().regex(/^\d{11}$|^\d{14}$/, "CPF/CNPJ inválido"),
       email: z.string().trim().email().max(255),
+      marketing: marketingSchema,
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -36,7 +71,11 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
     }
     if (lib.asaas_subscription_id && lib.subscription_status !== "canceled") {
       const pays = await asaas<{ data: any[] }>(`/subscriptions/${lib.asaas_subscription_id}/payments?status=PENDING`);
-      if (pays.data?.[0]?.invoiceUrl) return { url: pays.data[0].invoiceUrl as string };
+      const p = pays.data?.[0];
+      if (p?.invoiceUrl) {
+        await saveCheckoutAttribution(supabaseAdmin, context, lib.id, data.marketing);
+        return { url: p.invoiceUrl as string, paymentId: String(p.id), value: Number(p.value) };
+      }
     }
     const today = new Date().toISOString().slice(0, 10);
     const sub = await asaas<{ id: string }>("/subscriptions", {
@@ -50,9 +89,11 @@ export const createAsaasSubscription = createServerFn({ method: "POST" })
       asaas_customer_id: customerId, asaas_subscription_id: sub.id, subscription_status: "pending",
     }).eq("id", lib.id);
     const pays = await asaas<{ data: any[] }>(`/subscriptions/${sub.id}/payments`);
-    const url = pays.data?.[0]?.invoiceUrl as string | undefined;
+    const p = pays.data?.[0];
+    const url = p?.invoiceUrl as string | undefined;
     if (!url) throw new Error("Cobrança criada, mas o link de pagamento ainda não está disponível. Tente novamente em instantes.");
-    return { url };
+    await saveCheckoutAttribution(supabaseAdmin, context, lib.id, data.marketing);
+    return { url, paymentId: String(p.id), value: Number(p.value) };
   });
 
 export const cancelAsaasSubscription = createServerFn({ method: "POST" })

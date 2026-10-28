@@ -14,6 +14,7 @@ import { useLibraryUsage, useMyLibraries, switchLibrary } from "@/lib/library";
 import { useServerFn } from "@tanstack/react-start";
 import { createAsaasSubscription, cancelAsaasSubscription } from "@/lib/billing.functions";
 import { requiresProActivation } from "@/lib/platform-policy";
+import { MARKETING_CONSENT_KEY, metaBrowserIds, trackInitiateCheckout } from "@/lib/ad-tracking";
 
 function UpgradeBox({ pending }: { pending: boolean }) {
   const createFn = useServerFn(createAsaasSubscription);
@@ -28,10 +29,14 @@ function UpgradeBox({ pending }: { pending: boolean }) {
     }));
   }, [user]);
   const go = async () => {
+    if (busy) return;
     setBusy(true);
     try {
-      const { url } = await createFn({ data: { ...f, cpfCnpj: f.cpfCnpj.replace(/\D/g, "") } });
+      const saved = localStorage.getItem(MARKETING_CONSENT_KEY);
+      const consent = saved === "granted" || saved === "denied" ? saved : null;
+      const { url, paymentId, value } = await createFn({ data: { ...f, cpfCnpj: f.cpfCnpj.replace(/\D/g, ""), marketing: { consent, ...metaBrowserIds() } } });
       window.open(url, "_blank", "noopener");
+      trackInitiateCheckout(paymentId, value);
       toast.success("Página de pagamento aberta. O plano é ativado assim que o pagamento for confirmado.");
     } catch (e: any) { toast.error(e.message); }
     setBusy(false);

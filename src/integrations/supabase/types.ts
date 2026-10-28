@@ -333,6 +333,9 @@ export type Database = {
           complimentary_reason: string | null
           created_at: string
           current_period_end: string | null
+          first_paid_activation_at: string | null
+          first_paid_payment_id: string | null
+          first_paid_source: string | null
           free_plan_grandfathered: boolean
           id: string
           invite_code: string
@@ -350,6 +353,9 @@ export type Database = {
           complimentary_reason?: string | null
           created_at?: string
           current_period_end?: string | null
+          first_paid_activation_at?: string | null
+          first_paid_payment_id?: string | null
+          first_paid_source?: string | null
           free_plan_grandfathered?: boolean
           id?: string
           invite_code?: string
@@ -367,6 +373,9 @@ export type Database = {
           complimentary_reason?: string | null
           created_at?: string
           current_period_end?: string | null
+          first_paid_activation_at?: string | null
+          first_paid_payment_id?: string | null
+          first_paid_source?: string | null
           free_plan_grandfathered?: boolean
           id?: string
           invite_code?: string
@@ -498,6 +507,171 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_consent_records: {
+        Row: {
+          choice: string
+          created_at: string
+          id: string
+          notice_version: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          choice: string
+          created_at?: string
+          id?: string
+          notice_version: string
+          source: string
+          user_id: string
+        }
+        Update: {
+          choice?: string
+          created_at?: string
+          id?: string
+          notice_version?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      meta_capi_events: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_payment_id: string
+          attempts: number
+          attribution_id: string | null
+          created_at: string
+          currency: string
+          environment: string
+          event_id: string
+          event_name: string
+          event_time: string
+          history_verified: boolean
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          library_id: string
+          sent_at: string | null
+          status: string
+          value: number
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_payment_id: string
+          attempts?: number
+          attribution_id?: string | null
+          created_at?: string
+          currency?: string
+          environment: string
+          event_id: string
+          event_name: string
+          event_time?: string
+          history_verified?: boolean
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          library_id: string
+          sent_at?: string | null
+          status?: string
+          value: number
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string
+          attempts?: number
+          attribution_id?: string | null
+          created_at?: string
+          currency?: string
+          environment?: string
+          event_id?: string
+          event_name?: string
+          event_time?: string
+          history_verified?: boolean
+          id?: string
+          last_attempt_at?: string | null
+          last_error?: string | null
+          library_id?: string
+          sent_at?: string | null
+          status?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_capi_events_attribution_id_fkey"
+            columns: ["attribution_id"]
+            isOneToOne: false
+            referencedRelation: "meta_checkout_attribution"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_capi_events_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_checkout_attribution: {
+        Row: {
+          client_ip: string | null
+          client_user_agent: string | null
+          consent_record_id: string | null
+          created_at: string
+          em_hash: string | null
+          event_source_url: string
+          external_id_hash: string | null
+          fbc: string | null
+          fbp: string | null
+          id: string
+          library_id: string
+          user_id: string
+        }
+        Insert: {
+          client_ip?: string | null
+          client_user_agent?: string | null
+          consent_record_id?: string | null
+          created_at?: string
+          em_hash?: string | null
+          event_source_url: string
+          external_id_hash?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          id?: string
+          library_id: string
+          user_id: string
+        }
+        Update: {
+          client_ip?: string | null
+          client_user_agent?: string | null
+          consent_record_id?: string | null
+          created_at?: string
+          em_hash?: string | null
+          event_source_url?: string
+          external_id_hash?: string | null
+          fbc?: string | null
+          fbp?: string | null
+          id?: string
+          library_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_checkout_attribution_consent_record_id_fkey"
+            columns: ["consent_record_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_consent_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meta_checkout_attribution_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "libraries"
             referencedColumns: ["id"]
           },
         ]
@@ -744,6 +918,39 @@ export type Database = {
       bootstrap_first_admin: { Args: never; Returns: boolean }
       cancel_account_deletion: { Args: never; Returns: boolean }
       cancel_loan_request: { Args: { _request_id: string }; Returns: boolean }
+      cancel_unsent_meta_events_for_payment: {
+        Args: { _payment_id: string }
+        Returns: undefined
+      }
+      claim_meta_capi_events: {
+        Args: { _ids?: string[]; _limit?: number }
+        Returns: {
+          asaas_customer_id: string | null
+          asaas_payment_id: string
+          attempts: number
+          attribution_id: string | null
+          created_at: string
+          currency: string
+          environment: string
+          event_id: string
+          event_name: string
+          event_time: string
+          history_verified: boolean
+          id: string
+          last_attempt_at: string | null
+          last_error: string | null
+          library_id: string
+          sent_at: string | null
+          status: string
+          value: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "meta_capi_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       create_library: { Args: { _nome: string }; Returns: string }
       create_loan: {
         Args: { _book_id: string; _dias?: number; _user_id: string }
@@ -770,6 +977,18 @@ export type Database = {
         Returns: Json
       }
       normalize_book_text: { Args: { _value: string }; Returns: string }
+      record_asaas_paid_payment: {
+        Args: {
+          _environment: string
+          _library_id: string
+          _payment_id: string
+          _value: number
+        }
+        Returns: {
+          event_name: string
+          event_row_id: string
+        }[]
+      }
       regenerate_invite_code: { Args: never; Returns: string }
       reject_loan_request: { Args: { _request_id: string }; Returns: boolean }
       request_account_deletion: { Args: never; Returns: Json }

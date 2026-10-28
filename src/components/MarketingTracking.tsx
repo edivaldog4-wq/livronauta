@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { useRouterState } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/lib/auth-context";
+import { recordMarketingConsent } from "@/lib/marketing.functions";
 import { loadMarketingTags, MARKETING_CONSENT_KEY, revokeMarketingConsent, type MarketingConsent } from "@/lib/ad-tracking";
+
+const SYNC_KEY = "livronauta_consent_synced";
 
 export function MarketingTracking() {
   const href = useRouterState({ select: (state) => state.location.href });
+  const { user } = useAuth();
+  const record = useServerFn(recordMarketingConsent);
   const [consent, setConsent] = useState<MarketingConsent>(null);
   const [decided, setDecided] = useState(true);
 
@@ -19,12 +26,26 @@ export function MarketingTracking() {
     if (consent === "granted") void loadMarketingTags();
   }, [href, consent]);
 
+  // Persist the signed-in visitor's choice server-side so delayed payment reports honor it.
+  useEffect(() => {
+    if (!user || (consent !== "granted" && consent !== "denied")) return;
+    const marker = `${user.id}:${consent}`;
+    if (localStorage.getItem(SYNC_KEY) === marker) return;
+    record({ data: { choice: consent, source: "banner" } })
+      .then(() => localStorage.setItem(SYNC_KEY, marker))
+      .catch(() => {});
+  }, [user, consent, record]);
+
   const choose = (value: Exclude<MarketingConsent, null>) => {
     localStorage.setItem(MARKETING_CONSENT_KEY, value);
     setConsent(value);
     setDecided(true);
     if (value === "granted") void loadMarketingTags();
-    else if (consent === "granted") revokeMarketingConsent();
+    else if (consent === "granted") {
+      const finish = () => revokeMarketingConsent();
+      if (user) record({ data: { choice: "denied", source: "banner" } }).then(() => localStorage.setItem(SYNC_KEY, `${user.id}:denied`)).finally(finish);
+      else finish();
+    }
   };
 
   return (
@@ -33,7 +54,7 @@ export function MarketingTracking() {
         <aside className="fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-3xl rounded-md border border-border bg-card p-4 text-card-foreground shadow-xl" aria-label="Preferências de cookies">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <p className="text-sm text-muted-foreground">
-              Usamos cookies opcionais de publicidade para medir campanhas. Você pode aceitar ou recusar sem afetar o sistema.
+              Com sua permissão, usamos cookies de publicidade do Meta e do Google para medir campanhas e, ao assinar, compartilhamos com o Meta seu e-mail criptografado e o valor pago. Nada do acervo é enviado. Você pode recusar ou mudar depois em “Cookies”.
             </p>
             <div className="flex shrink-0 gap-2">
               <Button variant="outline" size="sm" onClick={() => choose("denied")}>Recusar</Button>

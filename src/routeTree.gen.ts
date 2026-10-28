@@ -31,6 +31,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedUsersRouteImport } from './routes/_authenticated/users'
 import { Route as ApiPublicAccountDeletionsRouteImport } from './routes/api/public/account-deletions'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicMetaCapiRetryRouteImport } from './routes/api/public/meta-capi-retry'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 
@@ -144,6 +145,11 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMetaCapiRetryRoute = ApiPublicMetaCapiRetryRouteImport.update({
+  id: '/api/public/meta-capi-retry',
+  path: '/api/public/meta-capi-retry',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   id: '/lovable/email/auth/preview',
   path: '/lovable/email/auth/preview',
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/users': typeof AuthenticatedUsersRoute
   '/api/public/account-deletions': typeof ApiPublicAccountDeletionsRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/meta-capi-retry': typeof ApiPublicMetaCapiRetryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/users': typeof AuthenticatedUsersRoute
   '/api/public/account-deletions': typeof ApiPublicAccountDeletionsRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/meta-capi-retry': typeof ApiPublicMetaCapiRetryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated/users': typeof AuthenticatedUsersRoute
   '/api/public/account-deletions': typeof ApiPublicAccountDeletionsRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/meta-capi-retry': typeof ApiPublicMetaCapiRetryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/public/account-deletions'
     | '/api/public/asaas-webhook'
+    | '/api/public/meta-capi-retry'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -281,6 +291,7 @@ export interface FileRouteTypes {
     | '/users'
     | '/api/public/account-deletions'
     | '/api/public/asaas-webhook'
+    | '/api/public/meta-capi-retry'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   id:
@@ -307,6 +318,7 @@ export interface FileRouteTypes {
     | '/_authenticated/users'
     | '/api/public/account-deletions'
     | '/api/public/asaas-webhook'
+    | '/api/public/meta-capi-retry'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesById: FileRoutesById
@@ -321,6 +333,7 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   ApiPublicAccountDeletionsRoute: typeof ApiPublicAccountDeletionsRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicMetaCapiRetryRoute: typeof ApiPublicMetaCapiRetryRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -481,6 +494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/meta-capi-retry': {
+      id: '/api/public/meta-capi-retry'
+      path: '/api/public/meta-capi-retry'
+      fullPath: '/api/public/meta-capi-retry'
+      preLoaderRoute: typeof ApiPublicMetaCapiRetryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/preview': {
       id: '/lovable/email/auth/preview'
       path: '/lovable/email/auth/preview'
@@ -543,6 +563,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   ApiPublicAccountDeletionsRoute: ApiPublicAccountDeletionsRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicMetaCapiRetryRoute: ApiPublicMetaCapiRetryRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
