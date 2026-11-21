@@ -55,7 +55,7 @@ export function PlatformUsers() {
       setAction(null);
       await qc.invalidateQueries({ queryKey: ["platform-users"] });
       await qc.invalidateQueries({ queryKey: ["library-usage"] });
-    } catch (err) { toast.error(err instanceof Error ? err.message : "Não foi possível concluir"); }
+    } catch (err) { const msg = err instanceof Error ? err.message : ""; const wait = msg.match(/after (\d+) seconds/); toast.error(wait ? `Um e-mail acabou de ser enviado para esta conta. Aguarde ${wait[1]} segundos antes de pedir outro.` : msg || "Não foi possível concluir"); }
     finally { setBusy(false); }
   };
   return (
