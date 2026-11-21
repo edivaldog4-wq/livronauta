@@ -140,3 +140,46 @@ export const setComplimentaryAccess = createServerFn({ method: "POST" })
     await auditPlatformAction(supabaseAdmin, context.userId, data.enabled ? "Gratuidade concedida" : "Gratuidade revogada", data.libraryId, { reason: data.reason ?? null });
     return { ok: true };
   });
+export const createComplimentaryUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({
+    nome: z.string().trim().min(2).max(120),
+    email: z.string().trim().toLowerCase().email().max(255),
+    reason: z.string().trim().min(2).max(300),
+  }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await requirePlatformAdmin(context);
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      email_confirm: true,
+      user_metadata: { nome: data.nome },
+    });
+    if (error || !created.user) {
+      throw new Error(/already|registered|exists/i.test(error?.message ?? "") ? "Já existe uma conta com este e-mail; use \"Conceder gratuidade\" nela" : "Não foi possível criar a conta");
+    }
+    const userId = created.user.id;
+    const { data: library } = await supabaseAdmin.from("libraries").select("id").eq("owner_id", userId).maybeSingle();
+    if (!library) {
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      throw new Error("A biblioteca da nova conta não foi criada; nada foi salvo");
+    }
+    const { error: updateError } = await supabaseAdmin.from("libraries").update({
+      complimentary_access: true,
+      complimentary_reason: data.reason,
+      complimentary_granted_by: context.userId,
+      complimentary_granted_at: new Date().toISOString(),
+      plan: "pro",
+      subscription_status: "complimentary",
+      asaas_subscription_id: null,
+      current_period_end: null,
+    }).eq("id", library.id);
+    if (updateError) {
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      throw new Error("Não foi possível aplicar a gratuidade; a conta foi desfeita");
+    }
+    const { error: mailError } = await supabaseAdmin.auth.resetPasswordForEmail(data.email, {
+      redirectTo: "https://livronauta.app/reset-password",
+    });
+    await auditPlatformAction(supabaseAdmin, context.userId, "Conta criada com gratuidade", userId, { email: data.email, reason: data.reason });
+    return { ok: true, emailSent: !mailError };
+  });

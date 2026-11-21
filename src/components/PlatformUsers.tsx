@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Mail, Gift, Shield, Search, KeyRound } from "lucide-react";
+import { Mail, Gift, Shield, Search, KeyRound, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { listPlatformUsers, sendUserPasswordReset, changePlatformUserEmail, setPlatformUserRole, setComplimentaryAccess } from "@/lib/platform-admin.functions";
+import { listPlatformUsers, sendUserPasswordReset, changePlatformUserEmail, setPlatformUserRole, setComplimentaryAccess, createComplimentaryUser } from "@/lib/platform-admin.functions";
 
 type PlatformUser = Awaited<ReturnType<typeof listPlatformUsers>>[number];
 type Action = { kind: "reset" | "email" | "role" | "free"; user: PlatformUser; libraryId?: string; enabled?: boolean };
@@ -28,6 +28,20 @@ export function PlatformUsers() {
   const [reason, setReason] = useState("");
   const [role, setRole] = useState<"admin" | "bibliotecario" | "membro">("admin");
   const [busy, setBusy] = useState(false);
+  const createUser = useServerFn(createComplimentaryUser);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({ nome: "", email: "", reason: "" });
+  const submitNew = async () => {
+    setBusy(true);
+    try {
+      const result = await createUser({ data: newUser });
+      toast.success(result.emailSent ? "Conta criada com gratuidade. O convite para criar a senha foi enviado." : "Conta criada com gratuidade. Use \"Recuperar senha\" para enviar o convite.");
+      setCreating(false);
+      setNewUser({ nome: "", email: "", reason: "" });
+      await qc.invalidateQueries({ queryKey: ["platform-users"] });
+    } catch (err) { toast.error(err instanceof Error ? err.message : "Não foi possível criar a conta"); }
+    finally { setBusy(false); }
+  };
   const open = (next: Action) => { setAction(next); setEmail(next.user.email); setReason(""); setRole("admin"); };
   const submit = async () => {
     if (!action) return;
@@ -46,7 +60,7 @@ export function PlatformUsers() {
   };
   return (
     <section className="space-y-4 border-t border-border pt-6" aria-label="Administração da plataforma">
-      <div className="flex flex-wrap items-center gap-2"><Shield className="size-5 text-primary" /><h2 className="text-xl font-semibold">Administração da plataforma</h2><Badge variant="secondary">Fundador</Badge></div>
+      <div className="flex flex-wrap items-center gap-2"><Shield className="size-5 text-primary" /><h2 className="text-xl font-semibold">Administração da plataforma</h2><Badge variant="secondary">Fundador</Badge><Button size="sm" className="sm:ml-auto" onClick={() => setCreating(true)}><UserPlus className="size-4" />Novo usuário com gratuidade</Button></div>
       <div className="relative max-w-md"><Search className="absolute left-3 top-3 size-4 text-muted-foreground" /><Input aria-label="Buscar contas da plataforma" placeholder="Buscar conta por nome ou e-mail" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" /></div>
       {isPending && <p className="text-muted-foreground">Carregando contas…</p>}
       {error && <p className="text-destructive">Não foi possível carregar as contas: {error.message}</p>}
@@ -74,6 +88,16 @@ export function PlatformUsers() {
           {action?.kind === "role" && <Select value={role} onValueChange={(value) => setRole(value as typeof role)}><SelectTrigger aria-label="Novo papel"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="admin">Administrador da biblioteca</SelectItem><SelectItem value="bibliotecario">Bibliotecário</SelectItem><SelectItem value="membro">Membro</SelectItem></SelectContent></Select>}
           {action?.kind === "free" && (action.enabled ? <div className="space-y-2"><p className="text-sm">A assinatura recorrente existente será cancelada. A biblioteca terá livros ilimitados sem ser alterada pelo Asaas.</p><Label htmlFor="free-reason">Motivo da concessão</Label><Input id="free-reason" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} /></div> : <p className="text-sm">O acervo será preservado, mas novos livros exigirão a ativação do Pro. Nenhuma cobrança será criada automaticamente.</p>)}
           <DialogFooter className="gap-3"><Button variant="outline" disabled={busy} onClick={() => setAction(null)}>Cancelar</Button><Button disabled={busy || (action?.kind === "free" && action.enabled && !reason.trim())} onClick={submit}>{busy ? "Processando…" : "Confirmar"}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={creating} onOpenChange={(value) => { if (!busy) setCreating(value); }}>
+        <DialogContent className="max-w-md"><DialogHeader><DialogTitle>Novo usuário com gratuidade</DialogTitle><DialogDescription>A conta e a biblioteca são criadas já liberadas, sem cobrança. A pessoa recebe um e-mail para criar a senha.</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1"><Label htmlFor="new-nome">Nome</Label><Input id="new-nome" maxLength={120} value={newUser.nome} onChange={(e) => setNewUser({ ...newUser, nome: e.target.value })} /></div>
+            <div className="space-y-1"><Label htmlFor="new-email">E-mail</Label><Input id="new-email" type="email" maxLength={255} value={newUser.email} onChange={(e) => setNewUser({ ...newUser, email: e.target.value })} /></div>
+            <div className="space-y-1"><Label htmlFor="new-reason">Motivo da gratuidade</Label><Input id="new-reason" maxLength={300} placeholder="Ex.: cortesia, parceiro, institucional" value={newUser.reason} onChange={(e) => setNewUser({ ...newUser, reason: e.target.value })} /></div>
+          </div>
+          <DialogFooter className="gap-3"><Button variant="outline" disabled={busy} onClick={() => setCreating(false)}>Cancelar</Button><Button disabled={busy || newUser.nome.trim().length < 2 || !newUser.email.includes("@") || newUser.reason.trim().length < 2} onClick={submitNew}>{busy ? "Criando…" : "Criar conta"}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </section>
